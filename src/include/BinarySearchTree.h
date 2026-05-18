@@ -21,8 +21,8 @@ public:
   BinarySearchTree() : root(nullptr) {};
   virtual ~BinarySearchTree();
 
-  virtual void insert(T value);
-  virtual void remove(T value);
+  void insert(T value);
+  void remove(T value);
 
   // virtual std::string serialize();
   // virtual void deserialize(const std::string& code);
