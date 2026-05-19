@@ -21,13 +21,13 @@ public:
   BinarySearchTree() : root(nullptr) {};
   virtual ~BinarySearchTree();
 
-  void insert(T data);
+  std::shared_ptr<TreeNode<T>> insert(T data);
   void remove(T data);
 
   virtual std::string inorder();
 
   std::shared_ptr<TreeNode<T>> find_node(T data);
-  void insert(std::shared_ptr<TreeNode<T>> node);
+  std::shared_ptr<TreeNode<T>> insert(std::shared_ptr<TreeNode<T>> node);
 
   void rotate_left(std::shared_ptr<TreeNode<T>> x);
   void rotate_right(std::shared_ptr<TreeNode<T>> x);
@@ -77,12 +77,13 @@ std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::find_node(T data) {
 }
 
 template <typename T, typename Compare>
-void BinarySearchTree<T, Compare>::insert(std::shared_ptr<TreeNode<T>> node) {
+std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::insert(std::shared_ptr<TreeNode<T>> node) {
   Compare comp;
   if (!this->root) {
     this->root = node;
-    return;
+    return node;
   }
+
   std::shared_ptr<TreeNode<T>> parent = root;
   while (parent) {
     if (comp(node->data, parent->data)) {
@@ -91,23 +92,27 @@ void BinarySearchTree<T, Compare>::insert(std::shared_ptr<TreeNode<T>> node) {
       } else {
         parent->left = node;
         node->parent = parent;
-        break;
+        return node;
       }
-    } else {
+    } else if (comp(parent->data, node->data)){
       if (parent->right) {
         parent = parent->right;
       } else {
         parent->right = node;
         node->parent = parent;
-        break;
+        return node;
       }
+    } else {
+        return parent;
     }
   }
+
+  return nullptr;
 }
 
 template <typename T, typename Compare>
-void BinarySearchTree<T, Compare>::insert(T data) {
-  insert(std::make_shared<TreeNode<T>>(data));
+std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::insert(T data) {
+  return insert(std::make_shared<TreeNode<T>>(data));
 }
 
 template <typename T, typename Compare>

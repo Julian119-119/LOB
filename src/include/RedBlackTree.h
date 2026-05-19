@@ -23,7 +23,7 @@ template <typename T, typename Compare=std::less<>>
 class RedBlackTree : public BinarySearchTree<T, Compare> {
 public:
     RedBlackTree<T, Compare>() : BinarySearchTree<T, Compare>() {};
-    void insert(T data);
+    std::shared_ptr<TreeNode<T>> insert(T data);
     void remove(T data);
 
 private:
@@ -186,10 +186,11 @@ void RedBlackTree<T, Compare>::remove_fixup(std::shared_ptr<RBTreeNode<T>> x,
 }
 
 template <typename T, typename Compare>
-void RedBlackTree<T, Compare>::insert(T data) {
-  std::shared_ptr<RBTreeNode<T>> newNode = std::make_shared<RBTreeNode<T>>(data);
-  BinarySearchTree<T, Compare>::insert(newNode);
+std::shared_ptr<TreeNode<T>> RedBlackTree<T, Compare>::insert(T data) {
+  std::shared_ptr<RBTreeNode<T>> AlloNode = std::make_shared<RBTreeNode<T>>(data);
+  std::shared_ptr<RBTreeNode<T>> newNode = std::dynamic_pointer_cast<RBTreeNode<T>>(BinarySearchTree<T, Compare>::insert(AlloNode));
   insert_fixup(newNode);
+  return newNode;
 }
 
 template <typename T, typename Compare>
