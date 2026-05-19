@@ -6,13 +6,13 @@
 #include <string>
 
 template <typename T> struct TreeNode {
-  T value;
+  T data;
   std::shared_ptr<TreeNode<T>> parent;
   std::shared_ptr<TreeNode<T>> left;
   std::shared_ptr<TreeNode<T>> right;
   TreeNode(T v) : TreeNode(v, nullptr) {}
   TreeNode(T v, std::shared_ptr<TreeNode<T>> p)
-      : value(v), left(nullptr), right(nullptr), parent(p) {}
+      : data(v), left(nullptr), right(nullptr), parent(p) {}
   virtual ~TreeNode() = default;
 };
 
@@ -21,14 +21,12 @@ public:
   BinarySearchTree() : root(nullptr) {};
   virtual ~BinarySearchTree();
 
-  void insert(T value);
-  void remove(T value);
+  void insert(T data);
+  void remove(T data);
 
-  // virtual std::string serialize();
-  // virtual void deserialize(const std::string& code);
   virtual std::string inorder();
 
-  std::shared_ptr<TreeNode<T>> find_node(T value);
+  std::shared_ptr<TreeNode<T>> find_node(T data);
   void insert(std::shared_ptr<TreeNode<T>> node);
 
   void rotate_left(std::shared_ptr<TreeNode<T>> x);
@@ -64,11 +62,11 @@ BinarySearchTree<T, Compare>::~BinarySearchTree() {
 }
 
 template <typename T, typename Compare>
-std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::find_node(T value) {
+std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::find_node(T data) {
   Compare comp;
   std::shared_ptr<TreeNode<T>> node = root;
-  while (node && node->value != value) {
-    if (comp(value, node->value)) {
+  while (node && node->data != data) {
+    if (comp(data, node->data)) {
       node = node->left;
     } else {
       node = node->right;
@@ -87,7 +85,7 @@ void BinarySearchTree<T, Compare>::insert(std::shared_ptr<TreeNode<T>> node) {
   }
   std::shared_ptr<TreeNode<T>> parent = root;
   while (parent) {
-    if (comp(node->value, parent->value)) {
+    if (comp(node->data, parent->data)) {
       if (parent->left) {
         parent = parent->left;
       } else {
@@ -108,8 +106,8 @@ void BinarySearchTree<T, Compare>::insert(std::shared_ptr<TreeNode<T>> node) {
 }
 
 template <typename T, typename Compare>
-void BinarySearchTree<T, Compare>::insert(T value) {
-  insert(std::make_shared<TreeNode<T>>(value));
+void BinarySearchTree<T, Compare>::insert(T data) {
+  insert(std::make_shared<TreeNode<T>>(data));
 }
 
 template <typename T, typename Compare>
@@ -126,8 +124,8 @@ void BinarySearchTree<T, Compare>::transplant(std::shared_ptr<TreeNode<T>> u,
 }
 
 template <typename T, typename Compare>
-void BinarySearchTree<T, Compare>::remove(T value) {
-  std::shared_ptr<TreeNode<T>> tar = find_node(value);
+void BinarySearchTree<T, Compare>::remove(T data) {
+  std::shared_ptr<TreeNode<T>> tar = find_node(data);
   if (!tar)
     return;
   if (tar->left && tar->right) {
@@ -216,106 +214,11 @@ void BinarySearchTree<T, Compare>::inorder_helper(
     inorder_helper(subroot->left, str, isFirst);
     if (isFirst) {
       isFirst = false;
-      str << subroot->value;
+      str << subroot->data;
     } else
-      str << ' ' << subroot->value;
+      str << ' ' << subroot->data;
     inorder_helper(subroot->right, str, isFirst);
   }
 }
-
-/*
-
-#include <sstream>
-#include <queue>
-
-template <typename T, typename Compare>
-std::string BinarySearchTree<T, Compare>::serialize() {
-    std::ostringstream out;
-    bool isFirst = true;
-    std::queue<std::shared_ptr<TreeNode<T>>> q;
-    int nonNullNode = 0;
-
-    if (root) {
-        q.push(root);
-        nonNullNode++;
-    } else {
-        return "#";
-    }
-
-    while (nonNullNode) {
-        std::shared_ptr<TreeNode<T>> node = q.front();
-        q.pop();
-        if (node) {
-            nonNullNode--;
-            if (isFirst) {
-                out << node->value;
-                isFirst = false;
-            } else {
-                out << ' ' << node->value;
-            }
-            if (node->left)
-                nonNullNode++;
-            if (node->right)
-                nonNullNode++;
-            q.push(node->left);
-            q.push(node->right);
-        } else {
-            if (isFirst) {
-                out << "#";
-                break;
-            } else {
-                out << " #";
-            }
-        }
-    }
-
-    return out.str();
-}
-
-
-template <typename T, typename Compare>
-void BinarySearchTree<T, Compare>::deserialize(const std::string& code) {
-    std::stringstream ss(code);
-    std::string token;
-    ss >> token;
-    if (token != "#") {
-        root = std::make_shared<TreeNode<T>>(stoi(token));
-    } else {
-        return;
-    }
-    std::queue<std::shared_ptr<TreeNode<T>>> q;
-    q.push(root);
-    while (!q.empty()) {
-        std::shared_ptr<TreeNode<T>> node = q.front();
-        q.pop();
-
-        if (ss >> token) {
-            if (token != "#") {
-                std::shared_ptr<TreeNode<T>> newNode =
-std::make_shared<TreeNode<T>>(stoi(token)); node->left = newNode;
-                newNode->parent = node;
-            }
-        } else {
-            break;
-        }
-
-        if (ss >> token) {
-            if (token != "#") {
-                std::shared_ptr<TreeNode<T>> newNode =
-std::make_shared<TreeNode<T>>(stoi(token)); node->right = newNode;
-                newNode->parent = node;
-            }
-        } else {
-            break;
-        }
-
-        if (node->left)
-            q.push(node->left);
-        if (node->right)
-            q.push(node->right);
-    }
-}
-
-*/
 
 #endif

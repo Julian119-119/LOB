@@ -13,7 +13,6 @@ struct RBTreeNode : TreeNode<T> {
     RBTreeNode<T>(T v, Color c, std::shared_ptr<TreeNode<T>> p): color(c), TreeNode<T>(v, p) {}
     ~RBTreeNode<T>() = default;
     
-    // std::string toString();
     static std::shared_ptr<RBTreeNode<T>> makeRBTreeNode(std::string& s, std::shared_ptr<TreeNode<T>> p = nullptr);
     static Color getColor(std::shared_ptr<TreeNode<T>> node);
     static void setColor(std::shared_ptr<TreeNode<T>> node, Color newcolor);
@@ -24,11 +23,8 @@ template <typename T, typename Compare=std::less<>>
 class RedBlackTree : public BinarySearchTree<T, Compare> {
 public:
     RedBlackTree<T, Compare>() : BinarySearchTree<T, Compare>() {};
-    void insert(T value);
-    void remove(T value);
-    void insert(std::shared_ptr<TreeNode<T>> node);
-    // std::string serialize() override;
-    // void deserialize(const std::string& code) override;
+    void insert(T data);
+    void remove(T data);
 
 private:
     void insert_fixup(std::shared_ptr<RBTreeNode<T>> z);
@@ -54,19 +50,6 @@ Color RBTreeNode<T>::getColor(std::shared_ptr<TreeNode<T>> node) {
   auto node_rbt = std::dynamic_pointer_cast<RBTreeNode<T>>(node);
   return node_rbt->color;
 }
-
-/*
-template <typename T>
-std::string RBTreeNode<T>::toString() {
-  std::stringstream str;
-  if (this->color == Color::RED) {
-    str << '(' << this->value << ')';
-  } else {
-    str << '(' << this->value;
-  }
-  return str.str();
-}
-*/
 
 template <typename T>
 std::shared_ptr<RBTreeNode<T>> RBTreeNode<T>::makeRBTreeNode(std::string &s,
@@ -203,16 +186,16 @@ void RedBlackTree<T, Compare>::remove_fixup(std::shared_ptr<RBTreeNode<T>> x,
 }
 
 template <typename T, typename Compare>
-void RedBlackTree<T, Compare>::insert(T value) {
-  std::shared_ptr<RBTreeNode<T>> newNode = std::make_shared<RBTreeNode<T>>(value);
+void RedBlackTree<T, Compare>::insert(T data) {
+  std::shared_ptr<RBTreeNode<T>> newNode = std::make_shared<RBTreeNode<T>>(data);
   BinarySearchTree<T, Compare>::insert(newNode);
   insert_fixup(newNode);
 }
 
 template <typename T, typename Compare>
-void RedBlackTree<T, Compare>::remove(T value) {
+void RedBlackTree<T, Compare>::remove(T data) {
   std::shared_ptr<RBTreeNode<T>> z =
-      std::dynamic_pointer_cast<RBTreeNode<T>>(BinarySearchTree<T, Compare>::find_node(value));
+      std::dynamic_pointer_cast<RBTreeNode<T>>(BinarySearchTree<T, Compare>::find_node(data));
   if (!z)
     return;
 
@@ -252,74 +235,5 @@ void RedBlackTree<T, Compare>::remove(T value) {
   if (y_original_color == Color::BLACK)
       remove_fixup(x, x_parent);
 }
-
-/*
-#include <queue>
-#include <sstream>
-
-std::string RedBlackTree<T, Compare>::serialize() {
-  if (!this->root)
-    return "#";
-  std::ostringstream out;
-  queue<std::shared_ptr<TreeNode<T>>> q;
-  q.push(this->root);
-  bool isFirst = true;
-  int nonNullNode = 1;
-  while (nonNullNode) {
-    auto node = std::dynamic_pointer_cast<RBTreeNode<T>>(q.front());
-    q.pop();
-    if (node) {
-      nonNullNode--;
-      if (isFirst) {
-        out << node->toString();
-        isFirst = false;
-      } else {
-        out << ' ' << node->toString();
-      }
-      if (node->left)
-        nonNullNode++;
-      if (node->right)
-        nonNullNode++;
-      q.push(node->left);
-      q.push(node->right);
-    } else {
-      out << " #";
-    }
-  }
-
-  return out.str();
-}
-
-void RedBlackTree<T, Compare>::deserialize(const std::string &code) {
-  stringstream ss(code);
-  std::string token;
-  ss >> token;
-  this->root = RBTreeNode<T>::makeRBTreeNode(token);
-  if (!this->root)
-    return;
-  queue<std::shared_ptr<TreeNode<T>>> q;
-  q.push(this->root);
-  while (1) {
-    auto node = std::dynamic_pointer_cast<RBTreeNode<T>>(q.front());
-    q.pop();
-    if (ss >> token) {
-      std::shared_ptr<RBTreeNode<T>> newNode = RBTreeNode<T>::makeRBTreeNode(token, node);
-      node->left = newNode;
-      if (newNode)
-        q.push(newNode);
-    } else {
-      break;
-    }
-    if (ss >> token) {
-      std::shared_ptr<RBTreeNode<T>> newNode = RBTreeNode<T>::makeRBTreeNode(token, node);
-      node->right = newNode;
-      if (newNode)
-        q.push(newNode);
-    } else {
-      break;
-    }
-  }
-}
-*/
 
 #endif
