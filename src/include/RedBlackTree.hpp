@@ -1,7 +1,7 @@
 #ifndef __REDBLACKTREE_H__
 #define __REDBLACKTREE_H__
 
-#include "BinarySearchTree.h"
+#include "BinarySearchTree.hpp"
 
 enum class Color {RED, BLACK};
 

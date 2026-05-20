@@ -15,13 +15,13 @@
 	- [x] 導入 Template 泛型設計。 
 	- [x] 引入可自訂的比較規則。 
 	- [x] 優化插入邏輯，使其成為單次走訪
-- [ ] **定義單筆訂單 `Order` 結構**
-  - [ ] 包含 `order_id`, `price`, `volume` 等關鍵資訊（保留 price 以利 O(1) 刪單時能反查 PriceLevel）。
-- [ ] **定義價格檔位 `PriceLevel` 結構**
-  - [ ] 包含 `price`, `total_volume`。
-  - [ ] 使用 `std::list<Order>` 實作 FIFO 排隊隊伍。
-- [ ] **泛型比較邏輯**
-  - [ ] 撰寫客製化 `Compare`，確保底層 RBT 僅根據 `PriceLevel.price` 進行比較。
+- [x] **定義單筆訂單 `Order` 結構**
+  - [x] 包含 `order_id`, `price`, `volume` 等關鍵資訊（保留 price 以利 O(1) 刪單時能反查 PriceLevel）。
+- [x] **定義價格檔位 `PriceLevel` 結構**
+  - [x] 包含 `price`, `total_volume`。
+  - [x] 使用 `std::list<Order>` 實作 FIFO 排隊隊伍。
+- [x] **泛型比較邏輯**
+  - [x] 撰寫客製化 `Compare`，確保底層 RBT 僅根據 `PriceLevel.price` 進行比較。
 - [ ] **實作委託簿 (LOB)**
   - [ ] 買方樹 (`BuyTree`) 與 賣方樹 (`SellTree`)。
   - [ ] 實作全域視角的 Order Map。

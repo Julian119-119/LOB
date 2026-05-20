@@ -4,8 +4,8 @@
 #include <sstream>
 #include <string>
 
-#include "BinarySearchTree.h"
-#include "RedBlackTree.h"
+#include "BinarySearchTree.hpp"
+#include "RedBlackTree.hpp"
 using namespace std;
 
 void testInt() {

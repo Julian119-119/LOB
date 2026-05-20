@@ -46,7 +46,8 @@ protected:
 #include <functional>
 #include <stdexcept>
 
-template <typename T> static void clear(std::shared_ptr<TreeNode<T>> node) {
+template <typename T> 
+static void clear(std::shared_ptr<TreeNode<T>> node) {
   if (!node)
     return;
   clear(node->left);
