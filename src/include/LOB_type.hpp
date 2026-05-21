@@ -1,67 +1,76 @@
-#ifndef __LOB_TYPE_H__
-#define __LOB_TYPE_H__
+#ifndef __LOB_TYPE_HPP__
+#define __LOB_TYPE_HPP__
 
 #include <cstdint>
+#include <iterator>
 #include <list>
+#include <memory_resource>
 
 #include "RedBlackTree.hpp"
 
-struct order {
+enum class Side {BUY, SELL};
+
+struct Order {
   uint32_t order_id;
+  Side side;
   double price;
   uint64_t timestamp;
   uint32_t volume;
 
-  order(uint32_t ID, double P, uint64_t TS, uint32_t V)
-      : order_id(ID), price(P), timestamp(TS), volume(V) {}
+  Order(uint32_t ID, Side si ,double P, uint64_t TS, uint32_t V)
+      : order_id(ID), side(si), price(P), timestamp(TS), volume(V) {}
 };
 
-struct priceLevel {
+class PriceLevel {
+private:
   double price;
   uint64_t total_volume;
-  std::list<order> order_queue;
+  std::pmr::list<Order> order_queue;
 
-  priceLevel(double P) : price(P), total_volume(0) {}
-  auto push(order newOrder);
-  order &front();
+public:
+  PriceLevel(double P, std::pmr::memory_resource *pool)
+      : price(P), total_volume(0), order_queue(pool) {}
+  double getprice() const { return price; }
+  auto push(Order newOrder);
+  Order &front();
   void pop();
+
+  friend class LOB;
 };
 
-struct less_priceLevel {
-  bool operator()(const priceLevel &a, const priceLevel &b) const {
-    return a.price < b.price;
+class Less_priceLevel {
+public:
+  bool operator()(const PriceLevel &a, const PriceLevel &b) const {
+    return a.getprice() < b.getprice();
   }
 };
 
-struct greater_priceLevel {
-  bool operator()(const priceLevel &a, const priceLevel &b) const {
-    return a.price > b.price;
+class Greater_priceLevel {
+public:
+  bool operator()(const PriceLevel &a, const PriceLevel &b) const {
+    return a.getprice() > b.getprice();
   }
 };
 
-/****************************************************************************/
+struct OrderLocation {
+    PriceLevel* pos_price_level;
+    std::pmr::list<Order>::iterator order_it;
+    Side side;
+};
 
-auto priceLevel::push(order newOrder) {
-  total_volume += newOrder.volume;
-  // 新的單必定比舊的時間要晚，所以 push 在最後面
-  order_queue.push_back(newOrder);
-  return order_queue.end();
-}
+class LOB {
+private:
+  std::pmr::unsynchronized_pool_resource pool;
 
-order &priceLevel::front() {
-  if (order_queue.empty())
-    std::runtime_error("There is empty price level");
-   
-  return order_queue.front();
-}
+  RedBlackTree<PriceLevel, Less_priceLevel> buyer_tree;
+  RedBlackTree<PriceLevel, Greater_priceLevel> seller_tree;
+  std::pmr::unordered_map<uint32_t, OrderLocation> order_map;
 
-void priceLevel::pop() {
-    if (order_queue.empty()) 
-        std::runtime_error("There is empty price level");
-    
-    total_volume -= order_queue.front().volume;
-    order_queue.pop_front();
-}
-
+  void order_matching();
+public:
+  LOB(): order_map(&pool) {}
+  void place_order(Order new_order);
+  void cancel_order(uint32_t tar_idx);
+};
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef __REDBLACKTREE_H__
-#define __REDBLACKTREE_H__
+#ifndef __REDBLACKTREE_HPP__
+#define __REDBLACKTREE_HPP__
 
 #include "BinarySearchTree.hpp"
 
@@ -23,6 +23,7 @@ template <typename T, typename Compare=std::less<>>
 class RedBlackTree : public BinarySearchTree<T, Compare> {
 public:
     RedBlackTree<T, Compare>() : BinarySearchTree<T, Compare>() {};
+    // 如果有相同的 node 則回傳舊的 node，否則傳新的節點
     std::shared_ptr<TreeNode<T>> insert(T data);
     void remove(T data);
 

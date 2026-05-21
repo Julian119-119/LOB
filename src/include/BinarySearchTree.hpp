@@ -1,5 +1,5 @@
-#ifndef __BINARYSEARCHTREE_H__
-#define __BINARYSEARCHTREE_H__
+#ifndef __BINARYSEARCHTREE_HPP__
+#define __BINARYSEARCHTREE_HPP__
 
 #include <functional>
 #include <memory>
