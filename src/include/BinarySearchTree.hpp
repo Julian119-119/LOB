@@ -18,16 +18,18 @@ template <typename T> struct TreeNode {
 
 template <typename T, typename Compare = std::less<>> class BinarySearchTree {
 public:
-  BinarySearchTree() : root(nullptr) {};
+  BinarySearchTree() : root(nullptr), smallest_node(nullptr) {};
   virtual ~BinarySearchTree();
 
+  bool isempty() { return root == nullptr };
+  std::shared_ptr<TreeNode<T>> find_node(T data);
+  T get_smallest() const { return smallest_node->data; }
+
   std::shared_ptr<TreeNode<T>> insert(T data);
+  std::shared_ptr<TreeNode<T>> insert(std::shared_ptr<TreeNode<T>> node);
   void remove(T data);
 
   virtual std::string inorder();
-
-  std::shared_ptr<TreeNode<T>> find_node(T data);
-  std::shared_ptr<TreeNode<T>> insert(std::shared_ptr<TreeNode<T>> node);
 
   void rotate_left(std::shared_ptr<TreeNode<T>> x);
   void rotate_right(std::shared_ptr<TreeNode<T>> x);
@@ -36,9 +38,10 @@ protected:
   void transplant(std::shared_ptr<TreeNode<T>> u,
                   std::shared_ptr<TreeNode<T>> v);
   virtual void inorder_helper(std::shared_ptr<TreeNode<T>> subroot,
-                              std::stringstream &str, bool& isFirst);
+                              std::stringstream &str, bool &isFirst);
 
   std::shared_ptr<TreeNode<T>> root;
+  std::shared_ptr<TreeNode<T>> smallest_node;
 };
 
 /*********************************************************************************/
@@ -46,8 +49,7 @@ protected:
 #include <functional>
 #include <stdexcept>
 
-template <typename T> 
-static void clear(std::shared_ptr<TreeNode<T>> node) {
+template <typename T> static void clear(std::shared_ptr<TreeNode<T>> node) {
   if (!node)
     return;
   clear(node->left);
@@ -64,8 +66,14 @@ BinarySearchTree<T, Compare>::~BinarySearchTree() {
 
 template <typename T, typename Compare>
 std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::find_node(T data) {
+  // 確保 O(1) 時間內可以找到最小的 node
+  if (smallest_node->data == data) {
+    return smallest_node;
+  }
+
   Compare comp;
   std::shared_ptr<TreeNode<T>> node = root;
+
   while (node && node->data != data) {
     if (comp(data, node->data)) {
       node = node->left;
@@ -78,10 +86,12 @@ std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::find_node(T data) {
 }
 
 template <typename T, typename Compare>
-std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::insert(std::shared_ptr<TreeNode<T>> node) {
+std::shared_ptr<TreeNode<T>>
+BinarySearchTree<T, Compare>::insert(std::shared_ptr<TreeNode<T>> node) {
   Compare comp;
-  if (!this->root) {
-    this->root = node;
+  if (!root) {
+    root = node;
+    smallest_node = node;
     return node;
   }
 
@@ -93,9 +103,13 @@ std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::insert(std::shared_pt
       } else {
         parent->left = node;
         node->parent = parent;
+        // 檢查是否是插入在最小的節點的左側
+        if (parent == smallest_node) {
+          smallest_node = node;
+        }
         return node;
       }
-    } else if (comp(parent->data, node->data)){
+    } else if (comp(parent->data, node->data)) {
       if (parent->right) {
         parent = parent->right;
       } else {
@@ -104,7 +118,7 @@ std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::insert(std::shared_pt
         return node;
       }
     } else {
-        return parent;
+      return parent;
     }
   }
 
@@ -134,6 +148,16 @@ void BinarySearchTree<T, Compare>::remove(T data) {
   std::shared_ptr<TreeNode<T>> tar = find_node(data);
   if (!tar)
     return;
+  if (tar == smallest_node) {
+    if (smallest_node->right) {
+      smallest_node = smallest_node->right;
+      while (smallest_node->left) {
+        smallest_node = smallest_node->left;
+      }
+    } else {
+      smallest_node = smallest_node->parent;
+    }
+  }
   if (tar->left && tar->right) {
     std::shared_ptr<TreeNode<T>> substituteNode = tar->right;
     while (substituteNode->left)
@@ -212,7 +236,7 @@ std::string BinarySearchTree<T, Compare>::inorder() {
 template <typename T, typename Compare>
 void BinarySearchTree<T, Compare>::inorder_helper(
     std::shared_ptr<TreeNode<T>> subroot, std::stringstream &str,
-    bool& isFirst) {
+    bool &isFirst) {
 
   if (!subroot)
     return;
