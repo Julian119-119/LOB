@@ -3,9 +3,10 @@
 
 #include <functional>
 #include <memory>
-#include <string>
+#include <sstream>
 
-template <typename T> struct TreeNode {
+template <typename T>
+struct TreeNode {
   T data;
   std::shared_ptr<TreeNode<T>> parent;
   std::shared_ptr<TreeNode<T>> left;
@@ -16,29 +17,30 @@ template <typename T> struct TreeNode {
   virtual ~TreeNode() = default;
 };
 
-template <typename T, typename Compare = std::less<>> class BinarySearchTree {
-public:
+template <typename T, typename Compare = std::less<>>
+class BinarySearchTree {
+ public:
   BinarySearchTree() : root(nullptr), smallest_node(nullptr) {};
   virtual ~BinarySearchTree();
 
-  bool isempty() { return root == nullptr };
+  bool isempty() { return root == nullptr; }
   std::shared_ptr<TreeNode<T>> find_node(T data);
-  T get_smallest() const { return smallest_node->data; }
+  T* get_leftmost_node() const { return &smallest_node->data; }
 
   std::shared_ptr<TreeNode<T>> insert(T data);
   std::shared_ptr<TreeNode<T>> insert(std::shared_ptr<TreeNode<T>> node);
   void remove(T data);
 
-  virtual std::string inorder();
+  std::string inorder();
 
   void rotate_left(std::shared_ptr<TreeNode<T>> x);
   void rotate_right(std::shared_ptr<TreeNode<T>> x);
 
-protected:
+ protected:
   void transplant(std::shared_ptr<TreeNode<T>> u,
                   std::shared_ptr<TreeNode<T>> v);
-  virtual void inorder_helper(std::shared_ptr<TreeNode<T>> subroot,
-                              std::stringstream &str, bool &isFirst);
+  void inorder_helper(std::shared_ptr<TreeNode<T>> subroot,
+                      std::stringstream& str, bool& isFirst);
 
   std::shared_ptr<TreeNode<T>> root;
   std::shared_ptr<TreeNode<T>> smallest_node;
@@ -49,9 +51,9 @@ protected:
 #include <functional>
 #include <stdexcept>
 
-template <typename T> static void clear(std::shared_ptr<TreeNode<T>> node) {
-  if (!node)
-    return;
+template <typename T>
+static void clear(std::shared_ptr<TreeNode<T>> node) {
+  if (!node) return;
   clear(node->left);
   clear(node->right);
   node->left = nullptr;
@@ -67,14 +69,14 @@ BinarySearchTree<T, Compare>::~BinarySearchTree() {
 template <typename T, typename Compare>
 std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::find_node(T data) {
   // 確保 O(1) 時間內可以找到最小的 node
-  if (smallest_node->data == data) {
+  Compare comp;
+  if (smallest_node &&
+      (!comp(smallest_node->data, data) && !comp(data, smallest_node->data))) {
     return smallest_node;
   }
 
-  Compare comp;
   std::shared_ptr<TreeNode<T>> node = root;
-
-  while (node && node->data != data) {
+  while (node && (comp(data, node->data) || comp(node->data, data))) {
     if (comp(data, node->data)) {
       node = node->left;
     } else {
@@ -86,8 +88,8 @@ std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::find_node(T data) {
 }
 
 template <typename T, typename Compare>
-std::shared_ptr<TreeNode<T>>
-BinarySearchTree<T, Compare>::insert(std::shared_ptr<TreeNode<T>> node) {
+std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::insert(
+    std::shared_ptr<TreeNode<T>> node) {
   Compare comp;
   if (!root) {
     root = node;
@@ -139,15 +141,13 @@ void BinarySearchTree<T, Compare>::transplant(std::shared_ptr<TreeNode<T>> u,
     u->parent->left = v;
   else
     u->parent->right = v;
-  if (v)
-    v->parent = u->parent;
+  if (v) v->parent = u->parent;
 }
 
 template <typename T, typename Compare>
 void BinarySearchTree<T, Compare>::remove(T data) {
   std::shared_ptr<TreeNode<T>> tar = find_node(data);
-  if (!tar)
-    return;
+  if (!tar) return;
   if (tar == smallest_node) {
     if (smallest_node->right) {
       smallest_node = smallest_node->right;
@@ -160,8 +160,7 @@ void BinarySearchTree<T, Compare>::remove(T data) {
   }
   if (tar->left && tar->right) {
     std::shared_ptr<TreeNode<T>> substituteNode = tar->right;
-    while (substituteNode->left)
-      substituteNode = substituteNode->left;
+    while (substituteNode->left) substituteNode = substituteNode->left;
     transplant(substituteNode, substituteNode->right);
     substituteNode->left = tar->left;
     substituteNode->right = tar->right;
@@ -169,10 +168,8 @@ void BinarySearchTree<T, Compare>::remove(T data) {
     tar->left = nullptr;
     tar->right = nullptr;
     tar->parent = nullptr;
-    if (substituteNode->left)
-      substituteNode->left->parent = substituteNode;
-    if (substituteNode->right)
-      substituteNode->right->parent = substituteNode;
+    if (substituteNode->left) substituteNode->left->parent = substituteNode;
+    if (substituteNode->right) substituteNode->right->parent = substituteNode;
   } else if (tar->left) {
     transplant(tar, tar->left);
   } else {
@@ -182,8 +179,7 @@ void BinarySearchTree<T, Compare>::remove(T data) {
 
 template <typename T, typename Compare>
 void BinarySearchTree<T, Compare>::rotate_left(std::shared_ptr<TreeNode<T>> x) {
-  if (!x || !x->right)
-    return;
+  if (!x || !x->right) return;
 
   std::shared_ptr<TreeNode<T>> substituteNode = x->right;
   transplant(x, substituteNode);
@@ -203,8 +199,7 @@ void BinarySearchTree<T, Compare>::rotate_left(std::shared_ptr<TreeNode<T>> x) {
 template <typename T, typename Compare>
 void BinarySearchTree<T, Compare>::rotate_right(
     std::shared_ptr<TreeNode<T>> y) {
-  if (!y || !y->left)
-    return;
+  if (!y || !y->left) return;
 
   std::shared_ptr<TreeNode<T>> substituteNode = y->left;
   transplant(y, substituteNode);
@@ -235,9 +230,8 @@ std::string BinarySearchTree<T, Compare>::inorder() {
 
 template <typename T, typename Compare>
 void BinarySearchTree<T, Compare>::inorder_helper(
-    std::shared_ptr<TreeNode<T>> subroot, std::stringstream &str,
-    bool &isFirst) {
-
+    std::shared_ptr<TreeNode<T>> subroot, std::stringstream& str,
+    bool& isFirst) {
   if (!subroot)
     return;
   else {

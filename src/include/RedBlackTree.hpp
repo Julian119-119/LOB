@@ -3,39 +3,45 @@
 
 #include "BinarySearchTree.hpp"
 
-enum class Color {RED, BLACK};
+enum class Color { RED, BLACK };
 
 template <typename T>
 struct RBTreeNode : TreeNode<T> {
-    Color color;
-    RBTreeNode<T>(T v): color(Color::RED), TreeNode<T>(v) {}
-    RBTreeNode<T>(T v, Color c): color(c), TreeNode<T>(v) {}
-    RBTreeNode<T>(T v, Color c, std::shared_ptr<TreeNode<T>> p): color(c), TreeNode<T>(v, p) {}
-    ~RBTreeNode<T>() = default;
-    
-    static std::shared_ptr<RBTreeNode<T>> makeRBTreeNode(std::string& s, std::shared_ptr<TreeNode<T>> p = nullptr);
-    static Color getColor(std::shared_ptr<TreeNode<T>> node);
-    static void setColor(std::shared_ptr<TreeNode<T>> node, Color newcolor);
+  Color color;
+  RBTreeNode<T>(T v) : color(Color::RED), TreeNode<T>(v) {}
+  RBTreeNode<T>(T v, Color c) : color(c), TreeNode<T>(v) {}
+  RBTreeNode<T>(T v, Color c, std::shared_ptr<TreeNode<T>> p)
+      : color(c), TreeNode<T>(v, p) {}
+  ~RBTreeNode<T>() = default;
+
+  static std::shared_ptr<RBTreeNode<T>> makeRBTreeNode(
+      std::string& s, std::shared_ptr<TreeNode<T>> p = nullptr);
+  static Color getColor(std::shared_ptr<TreeNode<T>> node);
+  static void setColor(std::shared_ptr<TreeNode<T>> node, Color newcolor);
 };
 
-
-template <typename T, typename Compare=std::less<>>
+template <typename T, typename Compare = std::less<>>
 class RedBlackTree : public BinarySearchTree<T, Compare> {
-public:
-    RedBlackTree<T, Compare>() : BinarySearchTree<T, Compare>() {};
-    // 如果有相同的 node 則回傳舊的 node，否則傳新的節點
-    std::shared_ptr<TreeNode<T>> insert(T data);
-    void remove(T data);
+ public:
+  RedBlackTree<T, Compare>() : BinarySearchTree<T, Compare>(){};
+  // 如果有相同的 node 則回傳舊的 node，否則傳新的節點
+  T* insert(T data);
+  // 異構插入
+  template <typename K, typename... Args>
+  T* insert_emplace(K data, Args&&... args);
+  void remove(T data);
 
-private:
-    void insert_fixup(std::shared_ptr<RBTreeNode<T>> z);
-    void remove_fixup(std::shared_ptr<RBTreeNode<T>> x, std::shared_ptr<RBTreeNode<T>> parent);
+ private:
+  void insert_fixup(std::shared_ptr<RBTreeNode<T>> z);
+  void remove_fixup(std::shared_ptr<RBTreeNode<T>> x,
+                    std::shared_ptr<RBTreeNode<T>> parent);
 };
 
 /********************************************************************************/
 
 template <typename T>
-void RBTreeNode<T>::setColor(std::shared_ptr<TreeNode<T>> node, Color newcolor) {
+void RBTreeNode<T>::setColor(std::shared_ptr<TreeNode<T>> node,
+                             Color newcolor) {
   auto node_rbt = std::dynamic_pointer_cast<RBTreeNode<T>>(node);
   if (!node_rbt)
     return;
@@ -45,16 +51,15 @@ void RBTreeNode<T>::setColor(std::shared_ptr<TreeNode<T>> node, Color newcolor) 
 
 template <typename T>
 Color RBTreeNode<T>::getColor(std::shared_ptr<TreeNode<T>> node) {
-  if (!node)
-    return Color::BLACK;
+  if (!node) return Color::BLACK;
 
   auto node_rbt = std::dynamic_pointer_cast<RBTreeNode<T>>(node);
   return node_rbt->color;
 }
 
 template <typename T>
-std::shared_ptr<RBTreeNode<T>> RBTreeNode<T>::makeRBTreeNode(std::string &s,
-                                                  std::shared_ptr<TreeNode<T>> p) {
+std::shared_ptr<RBTreeNode<T>> RBTreeNode<T>::makeRBTreeNode(
+    std::string& s, std::shared_ptr<TreeNode<T>> p) {
   if (s == "#") {
     return nullptr;
   } else if (s[0] == '(') {
@@ -120,9 +125,8 @@ void RedBlackTree<T, Compare>::insert_fixup(std::shared_ptr<RBTreeNode<T>> z) {
 }
 
 template <typename T, typename Compare>
-void RedBlackTree<T, Compare>::remove_fixup(std::shared_ptr<RBTreeNode<T>> x,
-                                std::shared_ptr<RBTreeNode<T>> parent) {
-
+void RedBlackTree<T, Compare>::remove_fixup(
+    std::shared_ptr<RBTreeNode<T>> x, std::shared_ptr<RBTreeNode<T>> parent) {
   std::shared_ptr<RBTreeNode<T>> w;
   while (x != this->root && RBTreeNode<T>::getColor(x) == Color::BLACK) {
     if (x == parent->left) {
@@ -187,19 +191,87 @@ void RedBlackTree<T, Compare>::remove_fixup(std::shared_ptr<RBTreeNode<T>> x,
 }
 
 template <typename T, typename Compare>
-std::shared_ptr<TreeNode<T>> RedBlackTree<T, Compare>::insert(T data) {
-  std::shared_ptr<RBTreeNode<T>> AlloNode = std::make_shared<RBTreeNode<T>>(data);
-  std::shared_ptr<RBTreeNode<T>> newNode = std::dynamic_pointer_cast<RBTreeNode<T>>(BinarySearchTree<T, Compare>::insert(AlloNode));
+T* RedBlackTree<T, Compare>::insert(T data) {
+  std::shared_ptr<RBTreeNode<T>> AlloNode =
+      std::make_shared<RBTreeNode<T>>(data);
+
+  std::shared_ptr<RBTreeNode<T>> newNode =
+      std::dynamic_pointer_cast<RBTreeNode<T>>(
+          BinarySearchTree<T, Compare>::insert(AlloNode));
+
   insert_fixup(newNode);
-  return newNode;
+  return &newNode->data;
+}
+
+template <typename T, typename Compare>
+template <typename K, typename... Args>
+T* RedBlackTree<T, Compare>::insert_emplace(K data, Args&&... args) {
+  Compare comp;
+  if (!this->root) {
+    T new_value(std::forward<Args>(args)...);
+    std::shared_ptr<RBTreeNode<T>> node =
+        std::make_shared<RBTreeNode<T>>(new_value, Color::BLACK);
+    this->smallest_node = node;
+    this->root = node;
+    return &node->data;
+  }
+
+  std::shared_ptr<TreeNode<T>> parent = this->root;
+  while (parent) {
+    if (comp(data, parent->data)) {
+      if (parent->left) {
+        parent = parent->left;
+      } else {
+        T new_value(std::forward<Args>(args)...);
+        std::shared_ptr<RBTreeNode<T>> node =
+            std::make_shared<RBTreeNode<T>>(new_value);
+
+        parent->left = node;
+        node->parent = parent;
+
+        // 檢查是否是插入在最小的節點的左側
+        if (parent == this->smallest_node) {
+          this->smallest_node = node;
+        }
+        insert_fixup(node);
+        return &node->data;
+      }
+    } else if (comp(parent->data, data)) {
+      if (parent->right) {
+        parent = parent->right;
+      } else {
+        T new_value(std::forward<Args>(args)...);
+        std::shared_ptr<RBTreeNode<T>> node =
+            std::make_shared<RBTreeNode<T>>(new_value);
+        parent->right = node;
+        node->parent = parent;
+        insert_fixup(node);
+        return &node->data;
+      }
+    } else {
+      return &parent->data;
+    }
+  }
+
+  return nullptr;
 }
 
 template <typename T, typename Compare>
 void RedBlackTree<T, Compare>::remove(T data) {
-  std::shared_ptr<RBTreeNode<T>> z =
-      std::dynamic_pointer_cast<RBTreeNode<T>>(BinarySearchTree<T, Compare>::find_node(data));
-  if (!z)
-    return;
+  std::shared_ptr<RBTreeNode<T>> z = std::dynamic_pointer_cast<RBTreeNode<T>>(
+      BinarySearchTree<T, Compare>::find_node(data));
+  if (!z) return;
+
+  if (z == this->smallest_node) {
+    if (this->smallest_node->right) {
+      this->smallest_node = this->smallest_node->right;
+      while (this->smallest_node->left) {
+        this->smallest_node = this->smallest_node->left;
+      }
+    } else {
+      this->smallest_node = this->smallest_node->parent;
+    }
+  }
 
   std::shared_ptr<RBTreeNode<T>> y = z;
   Color y_original_color = RBTreeNode<T>::getColor(y);
@@ -234,8 +306,7 @@ void RedBlackTree<T, Compare>::remove(T data) {
     RBTreeNode<T>::setColor(y, RBTreeNode<T>::getColor(z));
   }
 
-  if (y_original_color == Color::BLACK)
-      remove_fixup(x, x_parent);
+  if (y_original_color == Color::BLACK) remove_fixup(x, x_parent);
 }
 
 #endif

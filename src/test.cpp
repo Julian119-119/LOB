@@ -4,8 +4,8 @@
 #include <sstream>
 #include <string>
 
-
 #include "BinarySearchTree.hpp"
+#include "LOB_type.hpp"
 #include "RedBlackTree.hpp"
 using namespace std;
 
@@ -19,18 +19,18 @@ void testSmallest() {
     tree.insert(45);
     tree.insert(55);
     tree.insert(65);
-    assert(tree.get_smallest() == 35);
+    assert(*tree.get_leftmost_node() == 35);
 
     tree.remove(35);
-    assert(tree.get_smallest() == 40);
+    assert(*tree.get_leftmost_node() == 40);
     tree.remove(40);
-    assert(tree.get_smallest() == 45);
+    assert(*tree.get_leftmost_node() == 45);
     tree.remove(45);
-    assert(tree.get_smallest() == 50);
+    assert(*tree.get_leftmost_node() == 50);
     tree.remove(50);
-    assert(tree.get_smallest() == 55);
+    assert(*tree.get_leftmost_node() == 55);
     tree.insert(30);
-    assert(tree.get_smallest() == 30);
+    assert(*tree.get_leftmost_node() == 30);
   }
 
   {
@@ -38,15 +38,15 @@ void testSmallest() {
     for (int i = 0; i < 100; i++) {
       tree.insert(i);
     }
-    assert(tree.get_smallest() == 0);
+    assert(*tree.get_leftmost_node() == 0);
 
     tree.remove(100);
-    assert(tree.get_smallest() == 0);
+    assert(*tree.get_leftmost_node() == 0);
 
     for (int i = 0; i < 50; i++) {
       tree.remove(i);
     }
-    assert(tree.get_smallest() == 50);
+    assert(*tree.get_leftmost_node() == 50);
   }
 
   {
@@ -54,12 +54,12 @@ void testSmallest() {
     for (int i = 10; i >= 0; i--) {
       tree.insert(i);
     }
-    assert(tree.get_smallest() == 0);
+    assert(*tree.get_leftmost_node() == 0);
 
-    for(int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; i++) {
       tree.remove(i);
     }
-    assert(tree.get_smallest() == 4);
+    assert(*tree.get_leftmost_node() == 4);
 
     cout << "testSmallest passed!" << endl;
   }
@@ -107,7 +107,8 @@ void testString() {
 void testRedBlackTrees() {
   {
     RedBlackTree<int> tree;
-    tree.insert(1);
+    int* ptr = tree.insert(1);
+    assert(*ptr == 1);
     assert(tree.inorder() == "1");
     tree.insert(2);
     assert(tree.inorder() == "1 2");
@@ -140,11 +141,60 @@ void testRedBlackTrees() {
   }
 }
 
+void testLOB() {
+  {
+    LOB book;
+    Order order1(1U, Side::BUY, 50.5, 111, 10);
+    book.place_order(order1);
+  }
+
+  {
+    LOB lob;
+
+    Order s1{1U, Side::SELL, 100.0, 1000ULL, 50U};
+    lob.place_order(s1);
+
+    Order s2{2U, Side::SELL, 100.0, 1001ULL, 20U};
+    lob.place_order(s2);
+
+    Order s3{3U, Side::SELL, 101.0, 1002ULL, 30U};
+    lob.place_order(s3);
+
+    Order b1{4U, Side::BUY, 99.0, 1003ULL, 100U};
+    lob.place_order(b1);
+
+    Order b2{5U, Side::BUY, 100.0, 1004ULL, 30U};
+    lob.place_order(b2);
+
+    Order b3{6U, Side::BUY, 102.0, 1005ULL, 80U};
+    lob.place_order(b3);
+  }
+
+  {
+    LOB lob;
+
+    Order s1{1U, Side::SELL, 100.0, 1000ULL, 50U};
+    lob.place_order(s1);
+
+    Order s2{2U, Side::SELL, 100.0, 1001ULL, 20U};
+    lob.place_order(s2);
+
+    Order s3{3U, Side::SELL, 101.0, 1002ULL, 30U};
+    lob.place_order(s3);
+
+    lob.cancel_order(s1.order_id);
+    lob.cancel_order(s2.order_id);
+    lob.cancel_order(s3.order_id);
+  }
+}
+
 int main() {
   testInt();
   testString();
   testSmallest();
   testRedBlackTrees();
+  cout << "\ntestLOB  ==========================\n";
+  testLOB();
 
   return 0;
 }
