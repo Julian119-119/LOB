@@ -31,7 +31,7 @@ std::string LOB::inorder_check() {
 void LOB::order_matching(Order& new_order) {
   if (new_order.side == Side::BUY) /* 新訂單為買方 */ {
     bool is_matched = false;
-    while (!seller_tree.isempty() && new_order.volume) {
+    while (!seller_tree.empty() && new_order.volume) {
       PriceLevel* seller_price_level = seller_tree.get_leftmost_node();
       // 成交
       if (seller_price_level->price <= new_order.price) {
@@ -45,19 +45,19 @@ void LOB::order_matching(Order& new_order) {
         seller_order.volume -= make_deal_volume;
 
         // 顯示成交狀況
+        /*
         std::cout << "[TRADE] Match! Buyer ID: " << new_order.order_id
                   << " | Seller ID: " << seller_order.order_id
                   << " | Price: " << seller_order.price
                   << " | Volume: " << make_deal_volume << std::endl;
+        */
 
         // 清空賣方訂單，push 出去，並判斷 price level 是否為空
         if (seller_order.volume == 0) {
           order_map.erase(seller_order.order_id);
           seller_price_level->pop();
-          if (seller_price_level->isempty()) {
-            // 因為暫時 remove 只能輸入 T data，所以會消耗一點
-            // 複製的成本，等待未來在修改 RBT 時一起修改
-            seller_tree.remove(*seller_price_level);
+          if (seller_price_level->empty()) {
+            seller_tree.remove(seller_price_level->price);
           }
         }
       } else {
@@ -66,6 +66,7 @@ void LOB::order_matching(Order& new_order) {
     }
     if (new_order.volume > 0) {
       // 印出掛單訊息
+      /*
       std::cout << "[LIMIT] Order " << new_order.order_id << " ("
                 << new_order.side << ") ";
       if (!is_matched) {
@@ -75,7 +76,8 @@ void LOB::order_matching(Order& new_order) {
       }
       std::cout << " | Price: " << new_order.price
                 << " | Volume: " << new_order.volume << std::endl;
-
+      */
+     
       // 掛單
       // 使用異構插入，插入時確認沒有節點才建構
       auto placed_price_level =
@@ -89,7 +91,7 @@ void LOB::order_matching(Order& new_order) {
     }
   } else /* 新訂單為賣方 */ {
     bool is_matched = false;
-    while (!buyer_tree.isempty() && new_order.volume) {
+    while (!buyer_tree.empty() && new_order.volume) {
       PriceLevel* buyer_price_level = buyer_tree.get_leftmost_node();
       // 成交
       if (buyer_price_level->price >= new_order.price) {
@@ -103,19 +105,19 @@ void LOB::order_matching(Order& new_order) {
         buyer_order.volume -= make_deal_volume;
 
         // 顯示成交狀況
+        /*
         std::cout << "[TRADE] Match! Buyer ID: " << buyer_order.order_id
                   << " | Seller ID: " << new_order.order_id
                   << " | Price: " << buyer_order.price
                   << " | Volume: " << make_deal_volume << std::endl;
+        */
 
         // 如果清空了買方訂單，push 出去，並判斷 price level 是否為空
         if (buyer_order.volume == 0) {
           order_map.erase(buyer_order.order_id);
           buyer_price_level->pop();
-          if (buyer_price_level->isempty()) {
-            // 因為暫時 remove 只能輸入 T data，所以會消耗一點
-            // 複製的成本，等待未來在修改 RBT 時一起修改
-            buyer_tree.remove(*buyer_price_level);
+          if (buyer_price_level->empty()) {
+            buyer_tree.remove(buyer_price_level->price);
           }
         }
       } else {
@@ -124,6 +126,7 @@ void LOB::order_matching(Order& new_order) {
     }
     if (new_order.volume > 0) {
       // 印出掛單訊息
+      /*
       std::cout << "[LIMIT] Order " << new_order.order_id << " ("
                 << new_order.side << ") ";
       if (!is_matched) {
@@ -133,6 +136,7 @@ void LOB::order_matching(Order& new_order) {
       }
       std::cout << " | Price: " << new_order.price
                 << " | Volume: " << new_order.volume << std::endl;
+      */
 
       // 掛單
       // 使用異構插入，插入時確認沒有節點才建構
@@ -151,20 +155,30 @@ void LOB::order_matching(Order& new_order) {
 void LOB::place_order(Order new_order) { order_matching(new_order); }
 
 void LOB::cancel_order(uint32_t tar_idx) {
-  OrderLocation* location = &order_map.at(tar_idx);
-  if (!location) {
+  auto location_lt = order_map.find(tar_idx);
+  if (location_lt == order_map.end()) {
+    // 找不到訂單
+    /*
     std::cout << "[CANCEL REJECT] Order " << tar_idx << " not found."
               << std::endl;
-
+    */
     return;
   }
+
+  OrderLocation* location = &location_lt->second;
+  // 印出找到的訂單訊息
+  /*
+  std::cout << "[CANCEL] Order " << location->order_it->order_id
+            << " successfully canceled. "
+            << "Remaining Volume: " << location->order_it->volume << std::endl;
+  */
+
   location->pos_price_level->order_queue.erase(location->order_it);
-  if (location->pos_price_level->isempty()) {
-    // 與之前相同，remove 此時只能接受型別 T，等待未來的優化
+  if (location->pos_price_level->empty()) {
     if (location->side == Side::BUY) {
-      buyer_tree.remove(*location->pos_price_level);
+      buyer_tree.remove(location->pos_price_level->price);
     } else {
-      seller_tree.remove(*location->pos_price_level);
+      seller_tree.remove(location->pos_price_level->price);
     }
   }
   order_map.erase(tar_idx);

@@ -54,7 +54,7 @@ class PriceLevel {
   auto push(Order newOrder);
   Order& front();
   void pop();
-  bool isempty() { return order_queue.empty(); }
+  bool empty() { return order_queue.empty(); }
 
   friend class LOB;
   friend std::ostream& operator<<(std::ostream& os, const PriceLevel& pl);

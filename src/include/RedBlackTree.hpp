@@ -29,7 +29,8 @@ class RedBlackTree : public BinarySearchTree<T, Compare> {
   // 異構插入
   template <typename K, typename... Args>
   T* insert_emplace(K data, Args&&... args);
-  void remove(T data);
+  template <typename K>
+  void remove(const K& key);
 
  private:
   void insert_fixup(std::shared_ptr<RBTreeNode<T>> z);
@@ -211,7 +212,7 @@ T* RedBlackTree<T, Compare>::insert_emplace(K data, Args&&... args) {
     T new_value(std::forward<Args>(args)...);
     std::shared_ptr<RBTreeNode<T>> node =
         std::make_shared<RBTreeNode<T>>(new_value, Color::BLACK);
-    this->smallest_node = node;
+    this->leftmost_node = node;
     this->root = node;
     return &node->data;
   }
@@ -230,8 +231,8 @@ T* RedBlackTree<T, Compare>::insert_emplace(K data, Args&&... args) {
         node->parent = parent;
 
         // 檢查是否是插入在最小的節點的左側
-        if (parent == this->smallest_node) {
-          this->smallest_node = node;
+        if (parent == this->leftmost_node) {
+          this->leftmost_node = node;
         }
         insert_fixup(node);
         return &node->data;
@@ -257,19 +258,20 @@ T* RedBlackTree<T, Compare>::insert_emplace(K data, Args&&... args) {
 }
 
 template <typename T, typename Compare>
-void RedBlackTree<T, Compare>::remove(T data) {
+template <typename K>
+void RedBlackTree<T, Compare>::remove(const K& key) {
   std::shared_ptr<RBTreeNode<T>> z = std::dynamic_pointer_cast<RBTreeNode<T>>(
-      BinarySearchTree<T, Compare>::find_node(data));
+      BinarySearchTree<T, Compare>::find_node(key));
   if (!z) return;
 
-  if (z == this->smallest_node) {
-    if (this->smallest_node->right) {
-      this->smallest_node = this->smallest_node->right;
-      while (this->smallest_node->left) {
-        this->smallest_node = this->smallest_node->left;
+  if (z == this->leftmost_node) {
+    if (this->leftmost_node->right) {
+      this->leftmost_node = this->leftmost_node->right;
+      while (this->leftmost_node->left) {
+        this->leftmost_node = this->leftmost_node->left;
       }
     } else {
-      this->smallest_node = this->smallest_node->parent;
+      this->leftmost_node = this->leftmost_node->parent;
     }
   }
 
