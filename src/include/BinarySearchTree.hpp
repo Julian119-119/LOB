@@ -26,7 +26,10 @@ class BinarySearchTree {
   bool empty() { return root == nullptr; }
   template <typename K>
   std::shared_ptr<TreeNode<T>> find_node(const K& data);
-  T* get_leftmost_node() const { return &leftmost_node->data; }
+  std::shared_ptr<TreeNode<T>> get_leftmost_node() const {
+    return leftmost_node;
+  }
+  std::shared_ptr<TreeNode<T>> get_successor(std::shared_ptr<TreeNode<T>> node);
 
   std::shared_ptr<TreeNode<T>> insert(T data);
   std::shared_ptr<TreeNode<T>> insert(std::shared_ptr<TreeNode<T>> node);
@@ -69,7 +72,8 @@ BinarySearchTree<T, Compare>::~BinarySearchTree() {
 
 template <typename T, typename Compare>
 template <typename K>
-std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::find_node(const K& key) {
+std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::find_node(
+    const K& key) {
   // 確保 O(1) 時間內可以找到最小的 node
   Compare comp;
   if (leftmost_node &&
@@ -89,6 +93,27 @@ std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::find_node(const K& ke
   }
 
   return nullptr;
+}
+
+template <typename T, typename Compare>
+std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::get_successor(
+    std::shared_ptr<TreeNode<T>> node) {
+  if (!node) return nullptr;
+
+  if (node->right) {
+    node = node->right;
+    while (node->left)
+      node = node->left;
+  } else {
+    std::shared_ptr<TreeNode<T>> p = node->parent;
+    while (p && p->left != node) {
+      node = p;
+      p = p->parent;
+    }
+    node = p;
+  }
+
+  return node;
 }
 
 template <typename T, typename Compare>

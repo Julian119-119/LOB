@@ -29,10 +29,43 @@ std::string LOB::inorder_check() {
 */
 
 void LOB::order_matching(Order& new_order) {
+  // 如果 time in force 為 FOK 則要先試跑，確認可全部成交才撮合
+  // 否則直接徹單
+  if (new_order.time_in_force == Time_in_force::FOK) {
+    if (new_order.side == Side::BUY) /* 新訂單為買方 */ {
+      auto order_it = buyer_tree.get_leftmost_node();
+      uint32_t curr_total_volume = 0;
+      while (1) {
+        if (order_it && order_it->data.price <= new_order.price) {
+          curr_total_volume += order_it->data.total_volume;
+          if (curr_total_volume >= new_order.volume)
+            break;
+          else
+            order_it = buyer_tree.get_successor(order_it);
+        } else
+          return;
+      }
+    } else /* 新訂單為賣方 */ {
+      auto order_it = seller_tree.get_leftmost_node();
+      uint32_t curr_total_volume = 0;
+      while (1) {
+        if (order_it && order_it->data.price >= new_order.price) {
+          curr_total_volume += order_it->data.total_volume;
+          if (curr_total_volume >= new_order.volume)
+            break;
+          else
+            order_it = buyer_tree.get_successor(order_it);
+        } else
+          return;
+      }
+    }
+  }
+
+  /* 實際撮合 */
   if (new_order.side == Side::BUY) /* 新訂單為買方 */ {
     bool is_matched = false;
     while (!seller_tree.empty() && new_order.volume) {
-      PriceLevel* seller_price_level = seller_tree.get_leftmost_node();
+      PriceLevel* seller_price_level = &seller_tree.get_leftmost_node()->data;
       // 成交
       if (seller_price_level->price <= new_order.price) {
         is_matched = true;
@@ -64,7 +97,7 @@ void LOB::order_matching(Order& new_order) {
         break;
       }
     }
-    if (new_order.volume > 0) {
+    if (new_order.time_in_force != Time_in_force::IOC && new_order.volume > 0) {
       // 印出掛單訊息
       /*
       std::cout << "[LIMIT] Order " << new_order.order_id << " ("
@@ -77,7 +110,7 @@ void LOB::order_matching(Order& new_order) {
       std::cout << " | Price: " << new_order.price
                 << " | Volume: " << new_order.volume << std::endl;
       */
-     
+
       // 掛單
       // 使用異構插入，插入時確認沒有節點才建構
       auto placed_price_level =
@@ -92,7 +125,7 @@ void LOB::order_matching(Order& new_order) {
   } else /* 新訂單為賣方 */ {
     bool is_matched = false;
     while (!buyer_tree.empty() && new_order.volume) {
-      PriceLevel* buyer_price_level = buyer_tree.get_leftmost_node();
+      PriceLevel* buyer_price_level = &buyer_tree.get_leftmost_node()->data;
       // 成交
       if (buyer_price_level->price >= new_order.price) {
         is_matched = true;
@@ -124,7 +157,7 @@ void LOB::order_matching(Order& new_order) {
         break;
       }
     }
-    if (new_order.volume > 0) {
+    if (new_order.time_in_force != Time_in_force::IOC && new_order.volume > 0) {
       // 印出掛單訊息
       /*
       std::cout << "[LIMIT] Order " << new_order.order_id << " ("

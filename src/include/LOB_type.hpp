@@ -10,6 +10,7 @@
 #include "RedBlackTree.hpp"
 
 enum class Side : uint8_t { BUY, SELL };
+enum class Time_in_force : uint8_t { GTC, IOC, FOK };
 
 inline std::ostream& operator<<(std::ostream& os, const Side& side) {
   if (side == Side::BUY) {
@@ -24,12 +25,19 @@ inline std::ostream& operator<<(std::ostream& os, const Side& side) {
 struct Order {
   uint32_t order_id;
   Side side;
+  Time_in_force time_in_force;
   double price;
   uint64_t timestamp;
   uint32_t volume;
 
-  Order(uint32_t ID, Side si, double P, uint64_t TS, uint32_t V)
-      : order_id(ID), side(si), price(P), timestamp(TS), volume(V) {}
+  Order(uint32_t ID, Side si, double P, uint64_t TS, uint32_t V,
+        Time_in_force tif = Time_in_force::GTC)
+      : order_id(ID),
+        side(si),
+        price(P),
+        timestamp(TS),
+        volume(V),
+        time_in_force(tif) {}
 };
 
 /* 測試，用來檢查*/
@@ -37,7 +45,7 @@ inline std::ostream& operator<<(std::ostream& os, const Order& order) {
   os << "ID: " << order.order_id << ", side: " << order.side
      << ", price: " << order.price << "$, timestamp: " << order.timestamp
      << ", volume: " << order.volume;
-  
+
   return os;
 }
 
@@ -115,8 +123,10 @@ class LOB {
 
  public:
   LOB() : order_map(&pool) {}
-  double get_bid_price() const { return buyer_tree.get_leftmost_node()->price; }
-  double get_ask_price() const { return seller_tree.get_leftmost_node()->price; }
+  double get_bid_price() const { return buyer_tree.get_leftmost_node()->data.getprice(); }
+  double get_ask_price() const {
+    return seller_tree.get_leftmost_node()->data.getprice();
+  }
   void place_order(Order new_order);
   void cancel_order(uint32_t tar_idx);
   // std::string inorder_check();
