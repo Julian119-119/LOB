@@ -28,8 +28,30 @@ std::string LOB::inorder_check() {
 }
 */
 
+double LOB::get_bid_price() const {
+  if (buyer_tree.empty())
+    return NO_VALUE;
+  else
+    return buyer_tree.get_leftmost_node()->data.getprice();
+}
+
+double LOB::get_ask_price() const {
+  if (seller_tree.empty())
+    return NO_VALUE;
+  else
+    return seller_tree.get_leftmost_node()->data.getprice();
+}
+
+bool LOB::has_order(uint32_t order_idx) const {
+  if (order_map.find(order_idx) != order_map.end()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 void LOB::order_matching(Order& new_order) {
-  // 如果 time in force 為 FOK 則要先試跑，確認可全部成交才撮合
+  // 如果 time in force 為 FOK 則先試跑，確認可全部成交才撮合
   // 否則直接徹單
   if (new_order.time_in_force == Time_in_force::FOK) {
     if (new_order.side == Side::BUY) /* 新訂單為買方 */ {

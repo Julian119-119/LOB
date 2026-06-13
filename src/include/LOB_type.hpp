@@ -6,8 +6,11 @@
 #include <list>
 #include <memory_resource>
 #include <ostream>
+#include <optional>
 
 #include "RedBlackTree.hpp"
+
+constexpr int NO_VALUE = -1;
 
 enum class Side : uint8_t { BUY, SELL };
 enum class Time_in_force : uint8_t { GTC, IOC, FOK };
@@ -41,6 +44,7 @@ struct Order {
 };
 
 /* 測試，用來檢查*/
+/*
 inline std::ostream& operator<<(std::ostream& os, const Order& order) {
   os << "ID: " << order.order_id << ", side: " << order.side
      << ", price: " << order.price << "$, timestamp: " << order.timestamp
@@ -48,6 +52,7 @@ inline std::ostream& operator<<(std::ostream& os, const Order& order) {
 
   return os;
 }
+*/
 
 class PriceLevel {
  private:
@@ -69,6 +74,7 @@ class PriceLevel {
 };
 
 /* 測試用，用來讓 inorder 可以檢查它*/
+/*
 inline std::ostream& operator<<(std::ostream& os, const PriceLevel& pl) {
   os << "Price: " << pl.price << " | Total volume: " << pl.total_volume
      << " | order in this price level is ";
@@ -78,6 +84,7 @@ inline std::ostream& operator<<(std::ostream& os, const PriceLevel& pl) {
 
   return os;
 }
+*/
 
 class Less_priceLevel {
  public:
@@ -123,10 +130,10 @@ class LOB {
 
  public:
   LOB() : order_map(&pool) {}
-  double get_bid_price() const { return buyer_tree.get_leftmost_node()->data.getprice(); }
-  double get_ask_price() const {
-    return seller_tree.get_leftmost_node()->data.getprice();
-  }
+  double get_bid_price() const;
+  double get_ask_price() const;
+  bool has_order(uint32_t order_idx) const;
+
   void place_order(Order new_order);
   void cancel_order(uint32_t tar_idx);
   // std::string inorder_check();

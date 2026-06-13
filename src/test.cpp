@@ -5,6 +5,7 @@
 #include <random>
 #include <sstream>
 #include <vector>
+#include <vector>
 
 #include "BinarySearchTree.hpp"
 #include "LOB_type.hpp"
@@ -152,49 +153,68 @@ void testRedBlackTrees() {
 
 void testLOB() {
   {
-    LOB book;
-    Order order1(1U, Side::BUY, 50.5, 111, 10);
-    book.place_order(order1);
-  }
-
-  {
     LOB lob;
 
+    assert(lob.has_order(1U) == false);
+
+    // ID 1，賣出 100 元，50 股 (掛單)
     Order s1{1U, Side::SELL, 100.0, 1000ULL, 50U};
     lob.place_order(s1);
+    assert(lob.has_order(1U) == true);
 
+    // ID 2，賣出 100 元，20 股（掛單）
     Order s2{2U, Side::SELL, 100.0, 1001ULL, 20U};
     lob.place_order(s2);
+    assert(lob.has_order(2U) == true);
 
+    // ID 3，賣出 101 元，30 股（掛單）
     Order s3{3U, Side::SELL, 101.0, 1002ULL, 30U};
     lob.place_order(s3);
+    assert(lob.has_order(3U) == true);
 
+    // ID 4，買入 99 元，100 股（掛單）
     Order b1{4U, Side::BUY, 99.0, 1003ULL, 100U};
     lob.place_order(b1);
+    assert(lob.has_order(4U) == true);
 
+    // ID 5，買入 100 元，30 股
+    // ID 1 的成交 30 股，剩下 20 股
+    // ID 5，不掛單
     Order b2{5U, Side::BUY, 100.0, 1004ULL, 30U};
     lob.place_order(b2);
+    assert(lob.has_order(5U) == false);
 
+    // ID 6, 買入 102 元，80 股
+    // ID 1, ID 2, ID 3 全數結單
+    // ID 6，剩下 10 股，掛單
     Order b3{6U, Side::BUY, 102.0, 1005ULL, 80U};
     lob.place_order(b3);
+    assert(lob.has_order(6U) == true);
   }
 
   {
     LOB lob;
+    vector<Order> order_list;
+    order_list.reserve(16);
 
     Order s1{1U, Side::SELL, 100.0, 1000ULL, 50U};
     lob.place_order(s1);
+    order_list.push_back(s1);
 
     Order s2{2U, Side::SELL, 100.0, 1001ULL, 20U};
     lob.place_order(s2);
+    order_list.push_back(s2);
 
     Order s3{3U, Side::SELL, 101.0, 1002ULL, 30U};
     lob.place_order(s3);
+    order_list.push_back(s3);
 
     lob.cancel_order(4U);
-    lob.cancel_order(s1.order_id);
-    lob.cancel_order(s2.order_id);
-    lob.cancel_order(s3.order_id);
+    
+    for (auto tar_order : order_list) {
+      lob.cancel_order(tar_order.order_id);
+      assert(lob.has_order(tar_order.order_id) == false);
+    }
   }
 
   {

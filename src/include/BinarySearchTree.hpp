@@ -23,7 +23,7 @@ class BinarySearchTree {
   BinarySearchTree() : root(nullptr), leftmost_node(nullptr) {};
   virtual ~BinarySearchTree();
 
-  bool empty() { return root == nullptr; }
+  bool empty() const { return root == nullptr; }
   template <typename K>
   std::shared_ptr<TreeNode<T>> find_node(const K& data);
   std::shared_ptr<TreeNode<T>> get_leftmost_node() const {
