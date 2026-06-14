@@ -5,12 +5,12 @@
 #include <iterator>
 #include <list>
 #include <memory_resource>
-#include <ostream>
 #include <optional>
+#include <ostream>
 
 #include "RedBlackTree.hpp"
 
-constexpr int NO_VALUE = -1;
+constexpr int NO_VALUE = 0;
 
 enum class Side : uint8_t { BUY, SELL };
 enum class Time_in_force : uint8_t { GTC, IOC, FOK };
@@ -25,6 +25,9 @@ inline std::ostream& operator<<(std::ostream& os, const Side& side) {
   return os;
 }
 
+/************************************************************
+ * Order: 訂單。紀錄每筆交易                                *
+ ************************************************************/
 struct Order {
   uint32_t order_id;
   Side side;
@@ -43,8 +46,6 @@ struct Order {
         time_in_force(tif) {}
 };
 
-/* 測試，用來檢查*/
-/*
 inline std::ostream& operator<<(std::ostream& os, const Order& order) {
   os << "ID: " << order.order_id << ", side: " << order.side
      << ", price: " << order.price << "$, timestamp: " << order.timestamp
@@ -52,8 +53,11 @@ inline std::ostream& operator<<(std::ostream& os, const Order& order) {
 
   return os;
 }
-*/
 
+
+/***********************************************************
+ * PriceLevel: RBT node 儲存的 class。用於紀錄價格檔位     *
+ ***********************************************************/
 class PriceLevel {
  private:
   double price;
@@ -73,8 +77,6 @@ class PriceLevel {
   friend std::ostream& operator<<(std::ostream& os, const PriceLevel& pl);
 };
 
-/* 測試用，用來讓 inorder 可以檢查它*/
-/*
 inline std::ostream& operator<<(std::ostream& os, const PriceLevel& pl) {
   os << "Price: " << pl.price << " | Total volume: " << pl.total_volume
      << " | order in this price level is ";
@@ -84,8 +86,10 @@ inline std::ostream& operator<<(std::ostream& os, const PriceLevel& pl) {
 
   return os;
 }
-*/
 
+/******************************************************************
+ * Less_priceLevel: 比較兩者的 price 是否比較小。用於 seller tree *
+ ******************************************************************/
 class Less_priceLevel {
  public:
   bool operator()(const PriceLevel& a, const PriceLevel& b) const {
@@ -99,6 +103,9 @@ class Less_priceLevel {
   }
 };
 
+/******************************************************************
+ * Less_priceLevel: 比較兩者的 price 是否比較小。用於 buyer tree  *
+ ******************************************************************/
 class Greater_priceLevel {
  public:
   bool operator()(const PriceLevel& a, const PriceLevel& b) const {
@@ -112,12 +119,18 @@ class Greater_priceLevel {
   }
 };
 
+/*****************************************************
+ * OrderLocation: 儲存於 hash table 中，用於快速查詢 *
+ *****************************************************/
 struct OrderLocation {
   PriceLevel* pos_price_level;
   std::pmr::list<Order>::iterator order_it;
   Side side;
 };
 
+/******************************************************
+ * LOB:  limit order bool 主體                        *
+ ******************************************************/
 class LOB {
  private:
   std::pmr::unsynchronized_pool_resource pool;
@@ -126,17 +139,20 @@ class LOB {
   RedBlackTree<PriceLevel, Less_priceLevel> seller_tree;
   std::pmr::unordered_map<uint32_t, OrderLocation> order_map;
 
+  /* 訂單撮合 */
   void order_matching(Order& new_order);
 
  public:
   LOB() : order_map(&pool) {}
+  /* 搜尋 */
   double get_bid_price() const;
   double get_ask_price() const;
   bool has_order(uint32_t order_idx) const;
+  uint32_t get_volume_at_price(double tar_price, Side side) const;
 
+  /* 下單與取消訂單 */
   void place_order(Order new_order);
   void cancel_order(uint32_t tar_idx);
-  // std::string inorder_check();
 };
 
 #endif

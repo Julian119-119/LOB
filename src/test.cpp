@@ -156,26 +156,32 @@ void testLOB() {
     LOB lob;
 
     assert(lob.has_order(1U) == false);
+    assert(lob.get_volume_at_price(100, Side::BUY) == NO_VALUE);
 
     // ID 1，賣出 100 元，50 股 (掛單)
     Order s1{1U, Side::SELL, 100.0, 1000ULL, 50U};
     lob.place_order(s1);
     assert(lob.has_order(1U) == true);
+    assert(lob.get_volume_at_price(100.0, Side::SELL) == 50);
 
     // ID 2，賣出 100 元，20 股（掛單）
     Order s2{2U, Side::SELL, 100.0, 1001ULL, 20U};
     lob.place_order(s2);
     assert(lob.has_order(2U) == true);
+    assert(lob.get_volume_at_price(100.0, Side::SELL) == 70);
+    // cerr << 1 << ' ';
 
     // ID 3，賣出 101 元，30 股（掛單）
     Order s3{3U, Side::SELL, 101.0, 1002ULL, 30U};
     lob.place_order(s3);
     assert(lob.has_order(3U) == true);
+    assert(lob.get_volume_at_price(101.0, Side::SELL) == 30);
 
     // ID 4，買入 99 元，100 股（掛單）
     Order b1{4U, Side::BUY, 99.0, 1003ULL, 100U};
     lob.place_order(b1);
     assert(lob.has_order(4U) == true);
+    assert(lob.get_volume_at_price(99.0, Side::BUY) == 100);
 
     // ID 5，買入 100 元，30 股
     // ID 1 的成交 30 股，剩下 20 股
@@ -183,6 +189,8 @@ void testLOB() {
     Order b2{5U, Side::BUY, 100.0, 1004ULL, 30U};
     lob.place_order(b2);
     assert(lob.has_order(5U) == false);
+    cerr << lob.get_volume_at_price(100.0, Side::SELL) << '\n';
+    assert(lob.get_volume_at_price(100.0, Side::SELL) == 40);
 
     // ID 6, 買入 102 元，80 股
     // ID 1, ID 2, ID 3 全數結單
@@ -190,6 +198,8 @@ void testLOB() {
     Order b3{6U, Side::BUY, 102.0, 1005ULL, 80U};
     lob.place_order(b3);
     assert(lob.has_order(6U) == true);
+    assert(lob.has_order(100) == false);
+    assert(lob.get_volume_at_price(102.0, Side::BUY) == 10);
   }
 
   {

@@ -29,7 +29,8 @@ class BinarySearchTree {
   std::shared_ptr<TreeNode<T>> get_leftmost_node() const {
     return leftmost_node;
   }
-  std::shared_ptr<TreeNode<T>> get_successor(std::shared_ptr<TreeNode<T>> node);
+  std::shared_ptr<TreeNode<T>> get_successor(
+      std::shared_ptr<TreeNode<T>> node) const;
 
   std::shared_ptr<TreeNode<T>> insert(T data);
   std::shared_ptr<TreeNode<T>> insert(std::shared_ptr<TreeNode<T>> node);
@@ -97,23 +98,22 @@ std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::find_node(
 
 template <typename T, typename Compare>
 std::shared_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::get_successor(
-    std::shared_ptr<TreeNode<T>> node) {
+    std::shared_ptr<TreeNode<T>> node) const {
   if (!node) return nullptr;
 
-  if (node->right) {
-    node = node->right;
-    while (node->left)
-      node = node->left;
+  auto curr = node;
+  if (curr->right) {
+    curr = curr->right;
+    while (curr->left) curr = curr->left;
   } else {
-    std::shared_ptr<TreeNode<T>> p = node->parent;
-    while (p && p->left != node) {
-      node = p;
+    auto p = curr->parent;
+    while (p && p->left != curr) {
+      curr = p;
       p = p->parent;
     }
-    node = p;
+    curr = p;
   }
-
-  return node;
+  return curr;
 }
 
 template <typename T, typename Compare>

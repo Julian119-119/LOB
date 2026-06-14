@@ -1,7 +1,6 @@
 #include "LOB_type.hpp"
 
 #include <algorithm>
-#include <iostream>
 #include <sstream>
 
 auto PriceLevel::push(Order newOrder) {
@@ -17,16 +16,6 @@ void PriceLevel::pop() {
   total_volume -= order_queue.front().volume;
   order_queue.pop_front();
 }
-
-/* 檢查用途 */
-/*
-std::string LOB::inorder_check() {
-  std::stringstream ss;
-  ss << "buyer tree: \n" << buyer_tree.inorder();
-  ss << "\nseller tree: \n" << seller_tree.inorder();
-  return ss.str();
-}
-*/
 
 double LOB::get_bid_price() const {
   if (buyer_tree.empty())
@@ -47,6 +36,31 @@ bool LOB::has_order(uint32_t order_idx) const {
     return true;
   } else {
     return false;
+  }
+}
+
+uint32_t LOB::get_volume_at_price(double tar_price, Side tar_side) const {
+  /* 買方 */
+  if (tar_side == Side::BUY) {
+    auto lt = buyer_tree.get_leftmost_node();
+    while (lt && lt->data.price != tar_price) {
+      lt = buyer_tree.get_successor(lt);
+    }
+
+    if (!lt) 
+        return NO_VALUE;
+    else 
+        return lt->data.total_volume;
+  } else /* 賣方 */ {
+    auto lt = seller_tree.get_leftmost_node();
+    while (lt && lt->data.price != tar_price) {
+      lt = seller_tree.get_successor(lt);
+    }
+
+    if (!lt)
+        return NO_VALUE;
+    else
+        return lt->data.total_volume;
   }
 }
 
@@ -99,14 +113,6 @@ void LOB::order_matching(Order& new_order) {
         new_order.volume -= make_deal_volume;
         seller_order.volume -= make_deal_volume;
 
-        // 顯示成交狀況
-        /*
-        std::cout << "[TRADE] Match! Buyer ID: " << new_order.order_id
-                  << " | Seller ID: " << seller_order.order_id
-                  << " | Price: " << seller_order.price
-                  << " | Volume: " << make_deal_volume << std::endl;
-        */
-
         // 清空賣方訂單，push 出去，並判斷 price level 是否為空
         if (seller_order.volume == 0) {
           order_map.erase(seller_order.order_id);
@@ -120,18 +126,6 @@ void LOB::order_matching(Order& new_order) {
       }
     }
     if (new_order.time_in_force != Time_in_force::IOC && new_order.volume > 0) {
-      // 印出掛單訊息
-      /*
-      std::cout << "[LIMIT] Order " << new_order.order_id << " ("
-                << new_order.side << ") ";
-      if (!is_matched) {
-        std::cout << "place to Book";
-      } else {
-        std::cout << "rest remaining to Book";
-      }
-      std::cout << " | Price: " << new_order.price
-                << " | Volume: " << new_order.volume << std::endl;
-      */
 
       // 掛單
       // 使用異構插入，插入時確認沒有節點才建構
@@ -159,14 +153,6 @@ void LOB::order_matching(Order& new_order) {
         new_order.volume -= make_deal_volume;
         buyer_order.volume -= make_deal_volume;
 
-        // 顯示成交狀況
-        /*
-        std::cout << "[TRADE] Match! Buyer ID: " << buyer_order.order_id
-                  << " | Seller ID: " << new_order.order_id
-                  << " | Price: " << buyer_order.price
-                  << " | Volume: " << make_deal_volume << std::endl;
-        */
-
         // 如果清空了買方訂單，push 出去，並判斷 price level 是否為空
         if (buyer_order.volume == 0) {
           order_map.erase(buyer_order.order_id);
@@ -180,18 +166,6 @@ void LOB::order_matching(Order& new_order) {
       }
     }
     if (new_order.time_in_force != Time_in_force::IOC && new_order.volume > 0) {
-      // 印出掛單訊息
-      /*
-      std::cout << "[LIMIT] Order " << new_order.order_id << " ("
-                << new_order.side << ") ";
-      if (!is_matched) {
-        std::cout << "place to Book";
-      } else {
-        std::cout << "rest remaining to Book";
-      }
-      std::cout << " | Price: " << new_order.price
-                << " | Volume: " << new_order.volume << std::endl;
-      */
 
       // 掛單
       // 使用異構插入，插入時確認沒有節點才建構
@@ -212,21 +186,10 @@ void LOB::place_order(Order new_order) { order_matching(new_order); }
 void LOB::cancel_order(uint32_t tar_idx) {
   auto location_lt = order_map.find(tar_idx);
   if (location_lt == order_map.end()) {
-    // 找不到訂單
-    /*
-    std::cout << "[CANCEL REJECT] Order " << tar_idx << " not found."
-              << std::endl;
-    */
     return;
   }
 
   OrderLocation* location = &location_lt->second;
-  // 印出找到的訂單訊息
-  /*
-  std::cout << "[CANCEL] Order " << location->order_it->order_id
-            << " successfully canceled. "
-            << "Remaining Volume: " << location->order_it->volume << std::endl;
-  */
 
   location->pos_price_level->order_queue.erase(location->order_it);
   if (location->pos_price_level->empty()) {
