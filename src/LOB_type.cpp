@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <sstream>
+// #include <iostream>
 
 auto PriceLevel::push(Order newOrder) {
   total_volume += newOrder.volume;
@@ -17,18 +18,52 @@ void PriceLevel::pop() {
   order_queue.pop_front();
 }
 
-double LOB::get_bid_price() const {
+double LOB::get_best_bid_price() const {
   if (buyer_tree.empty())
-    return NO_VALUE;
+    return PRICE_NO_VALUE;
   else
     return buyer_tree.get_leftmost_node()->data.getprice();
 }
 
-double LOB::get_ask_price() const {
+double LOB::get_best_ask_price() const {
   if (seller_tree.empty())
-    return NO_VALUE;
+    return PRICE_NO_VALUE;
   else
     return seller_tree.get_leftmost_node()->data.getprice();
+}
+
+uint64_t LOB::get_best_bid_volume() const {
+  if (buyer_tree.empty()) {
+    return VOLUME_NO_VALUE;
+  } else {
+    return buyer_tree.get_leftmost_node()->data.get_total_volume();
+  }
+}
+
+uint64_t LOB::get_best_ask_volume() const {
+  if (seller_tree.empty()) {
+    return VOLUME_NO_VALUE;
+  } else {
+    return seller_tree.get_leftmost_node()->data.get_total_volume();
+  }
+}
+
+double LOB::get_mid_price() const {
+  if (buyer_tree.empty() || seller_tree.empty()) {
+    return PRICE_NO_VALUE;
+  }
+
+  double best_bid = get_best_bid_price();
+  double best_ask = get_best_ask_price();
+  return best_bid + (best_ask - best_bid) / 2;
+}
+
+double LOB::get_spread() const {
+  if (buyer_tree.empty() || seller_tree.empty()) {
+    return PRICE_NO_VALUE;
+  }
+
+  return get_best_bid_price() - get_best_ask_price();
 }
 
 bool LOB::has_order(uint32_t order_idx) const {
@@ -39,7 +74,7 @@ bool LOB::has_order(uint32_t order_idx) const {
   }
 }
 
-uint32_t LOB::get_volume_at_price(double tar_price, Side tar_side) const {
+uint64_t LOB::get_volume_at_price(double tar_price, Side tar_side) const {
   /* 買方 */
   if (tar_side == Side::BUY) {
     auto lt = buyer_tree.get_leftmost_node();
@@ -47,10 +82,10 @@ uint32_t LOB::get_volume_at_price(double tar_price, Side tar_side) const {
       lt = buyer_tree.get_successor(lt);
     }
 
-    if (!lt) 
-        return NO_VALUE;
-    else 
-        return lt->data.total_volume;
+    if (!lt)
+      return VOLUME_NO_VALUE;
+    else
+      return lt->data.total_volume;
   } else /* 賣方 */ {
     auto lt = seller_tree.get_leftmost_node();
     while (lt && lt->data.price != tar_price) {
@@ -58,16 +93,18 @@ uint32_t LOB::get_volume_at_price(double tar_price, Side tar_side) const {
     }
 
     if (!lt)
-        return NO_VALUE;
+      return VOLUME_NO_VALUE;
     else
-        return lt->data.total_volume;
+      return lt->data.total_volume;
   }
 }
 
 void LOB::order_matching(Order& new_order) {
   // 如果 time in force 為 FOK 則先試跑，確認可全部成交才撮合
   // 否則直接徹單
+  // std::cerr << "in order matching function\n" ;
   if (new_order.time_in_force == Time_in_force::FOK) {
+    // std::cerr << "in Time in force FOK\n";
     if (new_order.side == Side::BUY) /* 新訂單為買方 */ {
       auto order_it = buyer_tree.get_leftmost_node();
       uint32_t curr_total_volume = 0;
@@ -99,17 +136,19 @@ void LOB::order_matching(Order& new_order) {
 
   /* 實際撮合 */
   if (new_order.side == Side::BUY) /* 新訂單為買方 */ {
-    bool is_matched = false;
     while (!seller_tree.empty() && new_order.volume) {
       PriceLevel* seller_price_level = &seller_tree.get_leftmost_node()->data;
       // 成交
       if (seller_price_level->price <= new_order.price) {
-        is_matched = true;
         Order& seller_order = seller_price_level->front();
 
         // 判斷成交量
         uint32_t make_deal_volume;
         make_deal_volume = std::min(new_order.volume, seller_order.volume);
+
+        // std::cerr << "make " << make_deal_volume << "\n";
+
+        seller_price_level->total_volume -= make_deal_volume;
         new_order.volume -= make_deal_volume;
         seller_order.volume -= make_deal_volume;
 
@@ -126,7 +165,6 @@ void LOB::order_matching(Order& new_order) {
       }
     }
     if (new_order.time_in_force != Time_in_force::IOC && new_order.volume > 0) {
-
       // 掛單
       // 使用異構插入，插入時確認沒有節點才建構
       auto placed_price_level =
@@ -139,17 +177,16 @@ void LOB::order_matching(Order& new_order) {
       return;
     }
   } else /* 新訂單為賣方 */ {
-    bool is_matched = false;
     while (!buyer_tree.empty() && new_order.volume) {
       PriceLevel* buyer_price_level = &buyer_tree.get_leftmost_node()->data;
       // 成交
       if (buyer_price_level->price >= new_order.price) {
-        is_matched = true;
         Order& buyer_order = buyer_price_level->front();
 
         // 判斷成交量
         uint32_t make_deal_volume;
         make_deal_volume = std::min(new_order.volume, buyer_order.volume);
+        buyer_price_level->total_volume -= make_deal_volume;
         new_order.volume -= make_deal_volume;
         buyer_order.volume -= make_deal_volume;
 
@@ -166,7 +203,6 @@ void LOB::order_matching(Order& new_order) {
       }
     }
     if (new_order.time_in_force != Time_in_force::IOC && new_order.volume > 0) {
-
       // 掛單
       // 使用異構插入，插入時確認沒有節點才建構
       auto placed_price_level =

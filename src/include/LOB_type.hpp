@@ -10,7 +10,18 @@
 
 #include "RedBlackTree.hpp"
 
-constexpr int NO_VALUE = 0;
+static constexpr uint32_t IDX_NO_VALUE = std::numeric_limits<uint32_t>::max();
+static constexpr uint64_t VOLUME_NO_VALUE =
+    std::numeric_limits<uint64_t>::max();
+static constexpr double PRICE_NO_VALUE = std::numeric_limits<double>::max();
+
+inline bool is_valid_idx(uint32_t idx) { return idx != IDX_NO_VALUE; }
+
+inline bool is_valid_volume(uint64_t volume) {
+  return volume != VOLUME_NO_VALUE;
+}
+
+inline bool is_valid_price(double price) { return price != PRICE_NO_VALUE; }
 
 enum class Side : uint8_t { BUY, SELL };
 enum class Time_in_force : uint8_t { GTC, IOC, FOK };
@@ -54,7 +65,6 @@ inline std::ostream& operator<<(std::ostream& os, const Order& order) {
   return os;
 }
 
-
 /***********************************************************
  * PriceLevel: RBT node 儲存的 class。用於紀錄價格檔位     *
  ***********************************************************/
@@ -68,6 +78,7 @@ class PriceLevel {
   PriceLevel(double P, std::pmr::memory_resource* pool)
       : price(P), total_volume(0), order_queue(pool) {}
   double getprice() const { return price; }
+  uint64_t get_total_volume() const { return total_volume; }
   auto push(Order newOrder);
   Order& front();
   void pop();
@@ -112,10 +123,10 @@ class Greater_priceLevel {
     return a.getprice() > b.getprice();
   }
   bool operator()(const PriceLevel& a, const double p) const {
-    return a.getprice() < p;
+    return a.getprice() > p;
   }
   bool operator()(const double p, const PriceLevel& a) const {
-    return p < a.getprice();
+    return p > a.getprice();
   }
 };
 
@@ -139,16 +150,19 @@ class LOB {
   RedBlackTree<PriceLevel, Less_priceLevel> seller_tree;
   std::pmr::unordered_map<uint32_t, OrderLocation> order_map;
 
-  /* 訂單撮合 */
-  void order_matching(Order& new_order);
-
+  void order_matching(Order& new_order); /* 訂單撮合 */
  public:
   LOB() : order_map(&pool) {}
-  /* 搜尋 */
-  double get_bid_price() const;
-  double get_ask_price() const;
+
+  /* 查詢 */
+  double get_best_bid_price() const;
+  double get_best_ask_price() const;
+  uint64_t get_best_bid_volume() const;
+  uint64_t get_best_ask_volume() const;
+  double get_mid_price() const; /* 取得買賣方中間價格 */
+  double get_spread() const;    /* 取得買賣價差 */
   bool has_order(uint32_t order_idx) const;
-  uint32_t get_volume_at_price(double tar_price, Side side) const;
+  uint64_t get_volume_at_price(double tar_price, Side side) const;
 
   /* 下單與取消訂單 */
   void place_order(Order new_order);

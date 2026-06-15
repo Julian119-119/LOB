@@ -5,7 +5,6 @@
 #include <random>
 #include <sstream>
 #include <vector>
-#include <vector>
 
 #include "BinarySearchTree.hpp"
 #include "LOB_type.hpp"
@@ -152,11 +151,12 @@ void testRedBlackTrees() {
 }
 
 void testLOB() {
+  /* 測試下單與撮合 */
   {
     LOB lob;
 
     assert(lob.has_order(1U) == false);
-    assert(lob.get_volume_at_price(100, Side::BUY) == NO_VALUE);
+    assert(!is_valid_volume(lob.get_volume_at_price(100, Side::BUY)));
 
     // ID 1，賣出 100 元，50 股 (掛單)
     Order s1{1U, Side::SELL, 100.0, 1000ULL, 50U};
@@ -189,7 +189,6 @@ void testLOB() {
     Order b2{5U, Side::BUY, 100.0, 1004ULL, 30U};
     lob.place_order(b2);
     assert(lob.has_order(5U) == false);
-    cerr << lob.get_volume_at_price(100.0, Side::SELL) << '\n';
     assert(lob.get_volume_at_price(100.0, Side::SELL) == 40);
 
     // ID 6, 買入 102 元，80 股
@@ -198,32 +197,34 @@ void testLOB() {
     Order b3{6U, Side::BUY, 102.0, 1005ULL, 80U};
     lob.place_order(b3);
     assert(lob.has_order(6U) == true);
-    assert(lob.has_order(100) == false);
+    assert(lob.has_order(1U) == false);
+    assert(lob.has_order(2U) == false);
+    assert(lob.has_order(3U) == false);
     assert(lob.get_volume_at_price(102.0, Side::BUY) == 10);
   }
 
+  /* 測試取消訂單 */
   {
     LOB lob;
-    vector<Order> order_list;
+    vector<uint32_t> order_list;
     order_list.reserve(16);
 
     Order s1{1U, Side::SELL, 100.0, 1000ULL, 50U};
     lob.place_order(s1);
-    order_list.push_back(s1);
+    order_list.push_back(s1.order_id);
 
     Order s2{2U, Side::SELL, 100.0, 1001ULL, 20U};
     lob.place_order(s2);
-    order_list.push_back(s2);
+    order_list.push_back(s2.order_id);
 
     Order s3{3U, Side::SELL, 101.0, 1002ULL, 30U};
     lob.place_order(s3);
-    order_list.push_back(s3);
+    order_list.push_back(s3.order_id);
 
     lob.cancel_order(4U);
-    
-    for (auto tar_order : order_list) {
-      lob.cancel_order(tar_order.order_id);
-      assert(lob.has_order(tar_order.order_id) == false);
+    for (auto tar_order_idx : order_list) {
+      lob.cancel_order(tar_order_idx);
+      assert(lob.has_order(tar_order_idx) == false);
     }
   }
 
