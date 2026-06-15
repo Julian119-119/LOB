@@ -2,155 +2,60 @@
 #include <chrono>
 #include <cstdint>
 #include <iostream>
+#include <queue>
 #include <random>
 #include <sstream>
 #include <vector>
 
-#include "BinarySearchTree.hpp"
+#include "test.hpp"
 #include "LOB_type.hpp"
-#include "RedBlackTree.hpp"
 using namespace std;
 
-void testSmallest() {
-  {
-    BinarySearchTree<int> tree;
-    tree.insert(50);
-    tree.insert(40);
-    tree.insert(60);
-    tree.insert(35);
-    tree.insert(45);
-    tree.insert(55);
-    tree.insert(65);
-    assert(tree.get_leftmost_node()->data == 35);
 
-    tree.remove(35);
-    assert(tree.get_leftmost_node()->data == 40);
-    tree.remove(40);
-    assert(tree.get_leftmost_node()->data == 45);
-    tree.remove(45);
-    assert(tree.get_leftmost_node()->data == 50);
-    tree.remove(50);
-    assert(tree.get_leftmost_node()->data == 55);
-    tree.insert(30);
-    assert(tree.get_leftmost_node()->data == 30);
-  }
 
-  {
-    BinarySearchTree<int> tree;
-    for (int i = 0; i < 100; i++) {
-      tree.insert(i);
-    }
-    assert(tree.get_leftmost_node()->data == 0);
-
-    tree.remove(100);
-    assert(tree.get_leftmost_node()->data == 0);
-
-    for (int i = 0; i < 50; i++) {
-      tree.remove(i);
-    }
-    assert(tree.get_leftmost_node()->data == 50);
-  }
-
-  {
-    BinarySearchTree<int> tree;
-    for (int i = 10; i >= 0; i--) {
-      tree.insert(i);
-    }
-    assert(tree.get_leftmost_node()->data == 0);
-
-    for (int i = 0; i < 4; i++) {
-      tree.remove(i);
-    }
-    assert(tree.get_leftmost_node()->data == 4);
-
-    cout << "testSmallest passed!" << endl;
-  }
+/* help function: 下訂單 */
+inline static void add_buyer_order(LOB& lob, uint32_t idx, double price, uint64_t ts,
+                     uint32_t vol, Time_In_Force tif = Time_In_Force::GTC) {
+  Order new_order{idx, Side::BUY, price, ts, vol, tif};
+  lob.place_order(new_order);
 }
 
-void testInt() {
-  {
-    BinarySearchTree<int> tree;
-    tree.insert(1);
-    assert(tree.inorder() == "1");
-    tree.insert(2);
-    assert(tree.inorder() == "1 2");
-    tree.insert(3);
-    assert(tree.inorder() == "1 2 3");
-    tree.insert(4);
-    assert(tree.inorder() == "1 2 3 4");
-    tree.insert(5);
-    assert(tree.inorder() == "1 2 3 4 5");
-    tree.insert(6);
-    assert(tree.inorder() == "1 2 3 4 5 6");
-    tree.insert(7);
-    assert(tree.inorder() == "1 2 3 4 5 6 7");
-    tree.insert(8);
-    assert(tree.inorder() == "1 2 3 4 5 6 7 8");
-    tree.insert(9);
-    assert(tree.inorder() == "1 2 3 4 5 6 7 8 9");
-    tree.remove(2);
-    assert(tree.inorder() == "1 3 4 5 6 7 8 9");
-    std::cout << "test integer passed!\n";
-  }
-}
-
-void testString() {
-  {
-    BinarySearchTree<string> tree;
-    tree.insert("aaa");
-    tree.insert("bbb");
-    tree.insert("ccc");
-    assert(tree.inorder() == "aaa bbb ccc");
-
-    cout << "test string passed!\n";
-  }
-}
-
-void testRedBlackTrees() {
-  {
-    RedBlackTree<int> tree;
-    int* ptr = tree.insert(1);
-    assert(*ptr == 1);
-    assert(tree.inorder() == "1");
-    tree.insert(2);
-    assert(tree.inorder() == "1 2");
-    tree.insert(3);
-    assert(tree.inorder() == "1 2 3");
-    tree.insert(4);
-    assert(tree.inorder() == "1 2 3 4");
-    tree.insert(5);
-    assert(tree.inorder() == "1 2 3 4 5");
-    tree.insert(6);
-    assert(tree.inorder() == "1 2 3 4 5 6");
-    tree.insert(7);
-    assert(tree.inorder() == "1 2 3 4 5 6 7");
-    tree.insert(8);
-    assert(tree.inorder() == "1 2 3 4 5 6 7 8");
-    tree.insert(9);
-    assert(tree.inorder() == "1 2 3 4 5 6 7 8 9");
-
-    auto it = tree.get_leftmost_node();
-    assert(it->data == 1);
-    it = tree.get_successor(it);
-    assert(it->data == 2);
-    it = tree.get_successor(it);
-    assert(it->data == 3);
-    std::cout << "testRedBlackTrees 1 passed!\n";
-  }
-
-  {
-    RedBlackTree<string> tree;
-    tree.insert("aaa");
-    assert(tree.inorder() == "aaa");
-    tree.insert("bbb");
-    assert(tree.inorder() == "aaa bbb");
-    tree.insert("ccc");
-    assert(tree.inorder() == "aaa bbb ccc");
-    std::cout << "testRedBlackTrees 2 passed!\n";
-  }
+inline static void add_seller_order(LOB& lob, uint32_t idx, double price, uint64_t ts,
+                      uint32_t vol, Time_In_Force tif = Time_In_Force::GTC) {
+  Order new_order{idx, Side::SELL, price, ts, vol, tif};
+  lob.place_order(new_order);
 }
 
 void testLOB() {
+  cout << "\n===============  test lob ===============\n";
+
+  /* 測試 get_best_bid_price */
+  {
+    LOB lob;
+
+    assert(!is_valid_price(lob.get_best_bid_price()));
+
+    add_buyer_order(lob, 1U, 100.0, 1000ULL, 50U);
+    assert(lob.get_best_bid_price() == 100.0);
+
+    add_buyer_order(lob, 2U, 110.0, 1002ULL, 60U);
+    assert(lob.get_best_bid_price() == 110.0);
+
+    add_buyer_order(lob, 3U, 100.0, 1003ULL, 10U);
+    assert(lob.get_best_bid_price() == 110.0);
+
+    add_buyer_order(lob, 4U, 90.0, 1004ULL, 5U);
+    assert(lob.get_best_bid_price() == 110.0);
+
+    add_buyer_order(lob, 5U, 85.0, 1005ULL, 1U);
+    assert(lob.get_best_bid_price() == 110.0);
+
+    add_buyer_order(lob, 6U, 115.0, 1006ULL, 70U);
+    assert(lob.get_best_bid_price() == 115.0);
+
+    cout << "get_best_bid_price passed!\n";
+  }
+
   /* 測試下單與撮合 */
   {
     LOB lob;
@@ -169,7 +74,6 @@ void testLOB() {
     lob.place_order(s2);
     assert(lob.has_order(2U) == true);
     assert(lob.get_volume_at_price(100.0, Side::SELL) == 70);
-    // cerr << 1 << ' ';
 
     // ID 3，賣出 101 元，30 股（掛單）
     Order s3{3U, Side::SELL, 101.0, 1002ULL, 30U};
@@ -201,6 +105,8 @@ void testLOB() {
     assert(lob.has_order(2U) == false);
     assert(lob.has_order(3U) == false);
     assert(lob.get_volume_at_price(102.0, Side::BUY) == 10);
+
+    cout << "place and match order passed!\n";
   }
 
   /* 測試取消訂單 */
@@ -226,11 +132,82 @@ void testLOB() {
       lob.cancel_order(tar_order_idx);
       assert(lob.has_order(tar_order_idx) == false);
     }
+
+    cout << "cancel order passed!\n";
   }
 
+  /* 測試當 k < 掛單數時的 get_top_k_info */
   {
-    LOB book;
-    uint32_t ts = 1000;
+    LOB lob;
+    vector<PriceLevelInfo> info_list;
+    int test_num = 5;
+    int price_level_num = 6;
+    info_list.reserve(test_num);
+
+    int test_number = 5;
+    uint32_t curr_id = 1U;
+    double curr_price = 100.0;
+    uint64_t curr_timestamp = 1000ULL;
+    uint32_t curr_volume = 10U;
+
+    for (int i = 0; i < price_level_num; i++) {
+      Order order(curr_id, Side::SELL, curr_price, curr_timestamp, curr_volume);
+      lob.place_order(order);
+      assert(lob.has_order(curr_id));
+
+      if (i < test_num) {
+        info_list.emplace_back(curr_price, curr_volume);
+      }
+
+      curr_id++;
+      curr_price++;
+      curr_timestamp++;
+      curr_volume++;
+    }
+
+    vector<PriceLevelInfo> lob_top_k = lob.get_top_k_info(test_num, Side::SELL);
+    for (int i = 0; i < info_list.size(); i++) {
+      assert(info_list[i].price == lob_top_k[i].price);
+      assert(info_list[i].volume == lob_top_k[i].volume);
+    }
+
+    cout << "when k < the number of order, get_top_k_info passed!\n";
+  }
+
+  /* 測試當 k < 掛單數時的 get_top_k_info */
+  {
+    LOB lob;
+    vector<PriceLevelInfo> info_list;
+    int test_num = 5;
+    int price_level_num = 2;
+    info_list.reserve(test_num);
+
+    uint32_t curr_id = 1U;
+    double curr_price = 100.0;
+    uint64_t curr_timestamp = 1000ULL;
+    uint32_t curr_volume = 10U;
+
+    for (int i = 0; i < price_level_num; i++) {
+      Order order(curr_id, Side::SELL, curr_price, curr_timestamp, curr_volume);
+      lob.place_order(order);
+      assert(lob.has_order(curr_id));
+
+      if (i < test_num) {
+        info_list.emplace_back(curr_price, curr_volume);
+      }
+
+      curr_id++;
+      curr_price++;
+      curr_timestamp++;
+      curr_volume++;
+    }
+
+    vector<PriceLevelInfo> lob_top_k = lob.get_top_k_info(test_num, Side::SELL);
+    for (int i = 0; i < info_list.size(); i++) {
+      assert(info_list[i].price == lob_top_k[i].price);
+      assert(info_list[i].volume == lob_top_k[i].volume);
+    }
+    cout << "when k > the number of order, get_top_k_info passed!\n";
   }
 
   cout << "test lob passed!\n" << flush;
@@ -300,15 +277,4 @@ void testspend() {
        << "ms\n";
   cout << "average spending time: " << duration_time.count() / test_data_size
        << "ns\n";
-}
-
-int main() {
-  testInt();
-  testString();
-  testSmallest();
-  testRedBlackTrees();
-  testLOB();
-  // testspend();
-
-  return 0;
 }

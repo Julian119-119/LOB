@@ -5,8 +5,8 @@
 #include <iterator>
 #include <list>
 #include <memory_resource>
-#include <optional>
 #include <ostream>
+#include <vector>
 
 #include "RedBlackTree.hpp"
 
@@ -24,7 +24,7 @@ inline bool is_valid_volume(uint64_t volume) {
 inline bool is_valid_price(double price) { return price != PRICE_NO_VALUE; }
 
 enum class Side : uint8_t { BUY, SELL };
-enum class Time_in_force : uint8_t { GTC, IOC, FOK };
+enum class Time_In_Force : uint8_t { GTC, IOC, FOK };
 
 inline std::ostream& operator<<(std::ostream& os, const Side& side) {
   if (side == Side::BUY) {
@@ -42,13 +42,13 @@ inline std::ostream& operator<<(std::ostream& os, const Side& side) {
 struct Order {
   uint32_t order_id;
   Side side;
-  Time_in_force time_in_force;
+  Time_In_Force time_in_force;
   double price;
   uint64_t timestamp;
   uint32_t volume;
 
   Order(uint32_t ID, Side si, double P, uint64_t TS, uint32_t V,
-        Time_in_force tif = Time_in_force::GTC)
+        Time_In_Force tif = Time_In_Force::GTC)
       : order_id(ID),
         side(si),
         price(P),
@@ -98,6 +98,26 @@ inline std::ostream& operator<<(std::ostream& os, const PriceLevel& pl) {
   return os;
 }
 
+/*****************************************************
+ * OrderLocation: 儲存於 hash table 中，用於快速查詢 *
+ *****************************************************/
+struct OrderLocation {
+  PriceLevel* pos_price_level;
+  std::pmr::list<Order>::iterator order_it;
+  Side side;
+};
+
+/*****************************************************
+ * PriceLevelInfo: 用於回傳資訊                      *
+ *****************************************************/
+struct PriceLevelInfo {
+  double price;
+  uint64_t volume;
+
+  PriceLevelInfo(double p, uint64_t vol) : price(p), volume(vol) {};
+};
+
+
 /******************************************************************
  * Less_priceLevel: 比較兩者的 price 是否比較小。用於 seller tree *
  ******************************************************************/
@@ -111,6 +131,9 @@ class Less_priceLevel {
   }
   bool operator()(const double P, const PriceLevel& a) const {
     return P < a.getprice();
+  }
+  bool operator()(const PriceLevelInfo& a, const PriceLevelInfo& b) const {
+    return a.price < b.price;
   }
 };
 
@@ -128,15 +151,9 @@ class Greater_priceLevel {
   bool operator()(const double p, const PriceLevel& a) const {
     return p > a.getprice();
   }
-};
-
-/*****************************************************
- * OrderLocation: 儲存於 hash table 中，用於快速查詢 *
- *****************************************************/
-struct OrderLocation {
-  PriceLevel* pos_price_level;
-  std::pmr::list<Order>::iterator order_it;
-  Side side;
+  bool operator()(const PriceLevelInfo& a, const PriceLevelInfo& b) const {
+    return a.price > b.price;
+  }
 };
 
 /******************************************************
@@ -159,10 +176,11 @@ class LOB {
   double get_best_ask_price() const;
   uint64_t get_best_bid_volume() const;
   uint64_t get_best_ask_volume() const;
-  double get_mid_price() const; /* 取得買賣方中間價格 */
-  double get_spread() const;    /* 取得買賣價差 */
-  bool has_order(uint32_t order_idx) const;
+  double get_mid_price() const;             /* 取得買賣方中間價格 */
+  double get_spread() const;                /* 取得買賣價差 */
+  bool has_order(uint32_t order_idx) const; /* 判斷訂單是否在 LOB 中 */
   uint64_t get_volume_at_price(double tar_price, Side side) const;
+  std::vector<PriceLevelInfo> get_top_k_info(size_t k, Side side);
 
   /* 下單與取消訂單 */
   void place_order(Order new_order);

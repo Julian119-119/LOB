@@ -1,8 +1,8 @@
 #include "LOB_type.hpp"
 
 #include <algorithm>
-#include <sstream>
-// #include <iostream>
+#include <iostream>
+// #include <sstream>
 
 auto PriceLevel::push(Order newOrder) {
   total_volume += newOrder.volume;
@@ -99,11 +99,32 @@ uint64_t LOB::get_volume_at_price(double tar_price, Side tar_side) const {
   }
 }
 
+std::vector<PriceLevelInfo> LOB::get_top_k_info(size_t k, Side side) {
+  std::vector<PriceLevelInfo> info;
+  info.reserve(k);
+
+  if (side == Side::BUY) /* 買方 */ {
+    auto lt = buyer_tree.get_leftmost_node();
+    for (size_t i = 0; lt && i < k; i++) {
+      info.emplace_back(lt->data.getprice(), lt->data.get_total_volume());
+      lt = buyer_tree.get_successor(lt);
+    }
+  } else /* 賣方 */ {
+    auto lt = seller_tree.get_leftmost_node();
+    for (size_t i = 0; lt && i < k; i++) {
+      info.emplace_back(lt->data.getprice(), lt->data.get_total_volume());
+      lt = seller_tree.get_successor(lt);
+    }
+  }
+
+  return info;
+}
+
 void LOB::order_matching(Order& new_order) {
   // 如果 time in force 為 FOK 則先試跑，確認可全部成交才撮合
   // 否則直接徹單
   // std::cerr << "in order matching function\n" ;
-  if (new_order.time_in_force == Time_in_force::FOK) {
+  if (new_order.time_in_force == Time_In_Force::FOK) {
     // std::cerr << "in Time in force FOK\n";
     if (new_order.side == Side::BUY) /* 新訂單為買方 */ {
       auto order_it = buyer_tree.get_leftmost_node();
@@ -164,7 +185,7 @@ void LOB::order_matching(Order& new_order) {
         break;
       }
     }
-    if (new_order.time_in_force != Time_in_force::IOC && new_order.volume > 0) {
+    if (new_order.time_in_force != Time_In_Force::IOC && new_order.volume > 0) {
       // 掛單
       // 使用異構插入，插入時確認沒有節點才建構
       auto placed_price_level =
@@ -202,7 +223,7 @@ void LOB::order_matching(Order& new_order) {
         break;
       }
     }
-    if (new_order.time_in_force != Time_in_force::IOC && new_order.volume > 0) {
+    if (new_order.time_in_force != Time_In_Force::IOC && new_order.volume > 0) {
       // 掛單
       // 使用異構插入，插入時確認沒有節點才建構
       auto placed_price_level =
