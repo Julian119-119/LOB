@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cassert>
 
-#include "test.hpp"
+#include "test_helper.hpp"
 #include "BinarySearchTree.hpp"
 #include "RedBlackTree.hpp"
 using namespace std;

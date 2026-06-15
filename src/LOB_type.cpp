@@ -63,7 +63,7 @@ double LOB::get_spread() const {
     return PRICE_NO_VALUE;
   }
 
-  return get_best_bid_price() - get_best_ask_price();
+  return get_best_ask_price() - get_best_bid_price();
 }
 
 bool LOB::has_order(uint32_t order_idx) const {

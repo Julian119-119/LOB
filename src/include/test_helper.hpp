@@ -1,5 +1,5 @@
-#ifndef __TEST_HPP__
-#define __ test_HPP__
+#ifndef __TEST_HELPER_HPP__
+#define __TEST_HELPER_HPP__
 
 /* test BST */
 void testSmallest();
@@ -10,7 +10,8 @@ void testString();
 void testRedBlackTrees();
 
 /* test LOB */
-void testLOB();
+void test_query();
+void test_order();
 void testspend();
 
 #endif
