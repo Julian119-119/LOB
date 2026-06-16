@@ -70,3 +70,9 @@ void testspend() {
   std::cout << "average spending time: "
             << duration_time.count() / test_data_size << "ns\n";
 }
+
+int main() {
+  testspend();
+
+  return 0;
+}

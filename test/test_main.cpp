@@ -18,7 +18,6 @@ int main() {
   test_query();
   std::cout << '\n';
   test_order();
-  // testspend();
 
   return 0;
 }
