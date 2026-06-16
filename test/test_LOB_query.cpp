@@ -132,7 +132,6 @@ void test_query() {
     int price_level_num = 6;
     info_list.reserve(test_num);
 
-    int test_number = 5;
     uint32_t curr_id = 1U;
     double curr_price = 100.0;
     uint64_t curr_timestamp = 1000ULL;
@@ -155,7 +154,7 @@ void test_query() {
 
     std::vector<PriceLevelInfo> lob_top_k =
         lob.get_top_k_info(test_num, Side::SELL);
-    for (int i = 0; i < info_list.size(); i++) {
+    for (size_t i = 0; i < info_list.size(); i++) {
       assert(info_list[i].price == lob_top_k[i].price);
       assert(info_list[i].volume == lob_top_k[i].volume);
     }
@@ -191,7 +190,7 @@ void test_query() {
 
     std::vector<PriceLevelInfo> lob_top_k =
         lob.get_top_k_info(test_num, Side::SELL);
-    for (int i = 0; i < info_list.size(); i++) {
+    for (size_t i = 0; i < info_list.size(); i++) {
       assert(info_list[i].price == lob_top_k[i].price);
       assert(info_list[i].volume == lob_top_k[i].volume);
     }
@@ -206,7 +205,6 @@ void test_query() {
     int price_level_num = 6;
     info_list.reserve(test_num);
 
-    int test_number = 5;
     uint32_t curr_id = 1U;
     double curr_price = 100.0;
     uint64_t curr_timestamp = 1000ULL;
@@ -229,7 +227,7 @@ void test_query() {
 
     std::vector<PriceLevelInfo> lob_top_k =
         lob.get_top_k_info(test_num, Side::BUY);
-    for (int i = 0; i < info_list.size(); i++) {
+    for (size_t i = 0; i < info_list.size(); i++) {
       assert(info_list[i].price == lob_top_k[i].price);
       assert(info_list[i].volume == lob_top_k[i].volume);
     }
@@ -265,7 +263,7 @@ void test_query() {
 
       std::vector<PriceLevelInfo> lob_top_k =
           lob.get_top_k_info(test_num, Side::BUY);
-      for (int i = 0; i < info_list.size(); i++) {
+      for (size_t i = 0; i < info_list.size(); i++) {
         assert(info_list[i].price == lob_top_k[i].price);
         assert(info_list[i].volume == lob_top_k[i].volume);
       }

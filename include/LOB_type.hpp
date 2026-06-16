@@ -42,10 +42,10 @@ inline std::ostream& operator<<(std::ostream& os, const Side& side) {
 struct Order {
   uint32_t order_id;
   Side side;
-  Time_In_Force time_in_force;
   double price;
   uint64_t timestamp;
   uint32_t volume;
+  Time_In_Force time_in_force;
 
   Order(uint32_t ID, Side si, double P, uint64_t TS, uint32_t V,
         Time_In_Force tif = Time_In_Force::GTC)

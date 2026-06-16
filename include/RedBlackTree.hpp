@@ -8,10 +8,10 @@ enum class Color { RED, BLACK };
 template <typename T>
 struct RBTreeNode : TreeNode<T> {
   Color color;
-  RBTreeNode<T>(T v) : color(Color::RED), TreeNode<T>(v) {}
-  RBTreeNode<T>(T v, Color c) : color(c), TreeNode<T>(v) {}
+  RBTreeNode<T>(T v) : TreeNode<T>(v), color(Color::RED) {}
+  RBTreeNode<T>(T v, Color c) : TreeNode<T>(v), color(c) {}
   RBTreeNode<T>(T v, Color c, std::shared_ptr<TreeNode<T>> p)
-      : color(c), TreeNode<T>(v, p) {}
+      : TreeNode<T>(v, p), color(c) {}
   ~RBTreeNode<T>() = default;
 
   static std::shared_ptr<RBTreeNode<T>> makeRBTreeNode(

@@ -13,7 +13,7 @@ struct TreeNode {
   std::shared_ptr<TreeNode<T>> right;
   TreeNode(T v) : TreeNode(v, nullptr) {}
   TreeNode(T v, std::shared_ptr<TreeNode<T>> p)
-      : data(v), left(nullptr), right(nullptr), parent(p) {}
+      : data(v), parent(p), left(nullptr), right(nullptr) {}
   virtual ~TreeNode() = default;
 };
 
