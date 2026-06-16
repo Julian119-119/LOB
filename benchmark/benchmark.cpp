@@ -1,14 +1,34 @@
 #include <chrono>
 #include <iostream>
 #include <random>
+#include <variant>
+#include <vector>
 
 #include "LOB_type.hpp"
 #include "test_helper.hpp"
 
 const double stock_price = 100.0;
 const double tick_size = 0.5;
-const long test_data_size = 1'000'000'00;
+const long test_data_size = 10'000'000;
 const int print_point_num = 30;
+
+struct Cancel {
+  uint32_t id;
+  Cancel(uint32_t new_id) : id(new_id) {}
+};
+
+struct Place {
+  Order order;
+  Place(Order new_order) : order(new_order) {}
+};
+
+using Behavior = std::variant<Place, Cancel>;
+
+template<class... Ts>
+struct overloads : Ts... { using Ts::operator()...; };
+
+template<class... Ts>
+overloads(Ts...) -> overloads<Ts...>;
 
 void testspend() {
   std::cout << "\n==========  test spending time ==========\n" << std::flush;
@@ -35,8 +55,11 @@ void testspend() {
   std::vector<uint32_t> all_id;
   all_id.reserve(test_data_size);
 
-  auto start_time = std::chrono::high_resolution_clock::now();
+  // 儲存指令與訂單的 vector
+  std::vector<Behavior> behavior;
+  behavior.reserve(test_data_size);
 
+  std::cout << "\n設置隨機訂單中\n" << std::flush;
   for (long i = 0; i < test_data_size; i++) {
     if (all_id.empty() || place_or_cancel_dist(gen) <= 80) /* 放單 */ {
       uint32_t order_id = user_id++;
@@ -47,12 +70,12 @@ void testspend() {
 
       Order new_order(order_id, side, price, timestamp, volume);
       all_id.push_back(order_id);
-      book.place_order(new_order);
+      behavior.emplace_back(Place{new_order});
     } else /* 徹單 */ {
       // 拿到隨機產生的 idx
       uint32_t idx =
           id_dist(gen, decltype(id_dist)::param_type(0, all_id.size() - 1));
-      book.cancel_order(all_id[idx]);
+      behavior.emplace_back(Cancel{idx});
       // 將最後一個元素往前塞
       all_id[idx] = all_id.back();
       all_id.pop_back();
@@ -61,8 +84,26 @@ void testspend() {
       std::cout << '.' << std::flush;
     }
   }
+  std::cout << '\n';
+
+  const auto visitor =
+      overloads{[&](const Place& p) { book.place_order(p.order); },
+                [&](const Cancel& c) { book.cancel_order(c.id); }};
+
+  std::cout << "開始測試\n" << std::flush;
+  auto start_time = std::chrono::high_resolution_clock::now();
+  int i = 0;
+  for (const Behavior& curr_behavior : behavior) {
+    std::visit(visitor, curr_behavior);
+
+    if (i % (test_data_size / print_point_num) == 0) {
+      std::cout << '.' << std::flush;
+    }
+    i++;
+  }
 
   auto end_time = std::chrono::high_resolution_clock::now();
+  std::cout << "\n\n================ outcome ================\n";
   auto duration_time = std::chrono::duration_cast<std::chrono::nanoseconds>(
       end_time - start_time);
   std::cout << "\ntotal spending time: " << duration_time.count() / 1'000'000

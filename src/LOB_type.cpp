@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <iostream>
-// #include <sstream>
 
 auto PriceLevel::push(Order newOrder) {
   total_volume += newOrder.volume;
@@ -123,9 +122,7 @@ std::vector<PriceLevelInfo> LOB::get_top_k_info(size_t k, Side side) {
 void LOB::order_matching(Order& new_order) {
   // 如果 time in force 為 FOK 則先試跑，確認可全部成交才撮合
   // 否則直接徹單
-  // std::cerr << "in order matching function\n" ;
   if (new_order.time_in_force == Time_In_Force::FOK) {
-    // std::cerr << "in Time in force FOK\n";
     if (new_order.side == Side::BUY) /* 新訂單為買方 */ {
       auto order_it = seller_tree.get_leftmost_node();
       uint32_t curr_total_volume = 0;
@@ -166,9 +163,6 @@ void LOB::order_matching(Order& new_order) {
         // 判斷成交量
         uint32_t make_deal_volume;
         make_deal_volume = std::min(new_order.volume, seller_order.volume);
-
-        // std::cerr << "make " << make_deal_volume << "\n";
-
         seller_price_level->total_volume -= make_deal_volume;
         new_order.volume -= make_deal_volume;
         seller_order.volume -= make_deal_volume;

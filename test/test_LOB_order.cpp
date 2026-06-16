@@ -56,7 +56,6 @@ void test_order() {
     // ID 6, 買入 102 元，80 股
     // ID 1, ID 2, ID 3 全數結單
     // ID 6，剩下 10 股，掛單
-
     add_buyer_order(lob, 6U, 102.0, 1005ULL, 80U);
     assert(lob.has_order(6U) == true);
     assert(lob.has_order(1U) == false);
@@ -261,7 +260,6 @@ void test_order() {
     // 測試相同價格下，同一訂單上全部成交
     add_seller_order(lob, 12U, 100.0, 1010ULL, 50U);
     add_buyer_order(lob, 13U, 100.0, 1011ULL, 50U, Time_In_Force::FOK);
-    // std::cerr << lob.get_volume_at_price(100.0, Side::SELL) << '\n';
     assert(lob.has_order(12U) == false);
     assert(is_valid_volume(lob.get_volume_at_price(100.0, Side::SELL)) ==
            false);
