@@ -16,6 +16,7 @@ int main() {
   /* test LOB */
   std::cout << "\n===============  test lob ===============\n";
   test_query();
+  std::cout << '\n';
   test_order();
   // testspend();
 

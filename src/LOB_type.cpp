@@ -127,7 +127,7 @@ void LOB::order_matching(Order& new_order) {
   if (new_order.time_in_force == Time_In_Force::FOK) {
     // std::cerr << "in Time in force FOK\n";
     if (new_order.side == Side::BUY) /* 新訂單為買方 */ {
-      auto order_it = buyer_tree.get_leftmost_node();
+      auto order_it = seller_tree.get_leftmost_node();
       uint32_t curr_total_volume = 0;
       while (1) {
         if (order_it && order_it->data.price <= new_order.price) {
@@ -135,12 +135,12 @@ void LOB::order_matching(Order& new_order) {
           if (curr_total_volume >= new_order.volume)
             break;
           else
-            order_it = buyer_tree.get_successor(order_it);
+            order_it = seller_tree.get_successor(order_it);
         } else
           return;
       }
     } else /* 新訂單為賣方 */ {
-      auto order_it = seller_tree.get_leftmost_node();
+      auto order_it = buyer_tree.get_leftmost_node();
       uint32_t curr_total_volume = 0;
       while (1) {
         if (order_it && order_it->data.price >= new_order.price) {
