@@ -31,7 +31,7 @@ template<class... Ts>
 overloads(Ts...) -> overloads<Ts...>;
 
 void testspend() {
-  std::cout << "\n==========  test spending time ==========\n" << std::flush;
+  std::cout << "\n========== testing in progress ==========\n" << std::flush;
   std::random_device rd;
   std::mt19937 gen(rd());
 
@@ -59,7 +59,7 @@ void testspend() {
   std::vector<Behavior> behavior;
   behavior.reserve(test_data_size);
 
-  std::cout << "\n設置隨機訂單中\n" << std::flush;
+  std::cout << "\nGenerating random orders\n" << std::flush;
   for (long i = 0; i < test_data_size; i++) {
     if (all_id.empty() || place_or_cancel_dist(gen) <= 80) /* 放單 */ {
       uint32_t order_id = user_id++;
@@ -90,7 +90,7 @@ void testspend() {
       overloads{[&](const Place& p) { book.place_order(p.order); },
                 [&](const Cancel& c) { book.cancel_order(c.id); }};
 
-  std::cout << "開始測試\n" << std::flush;
+  std::cout << "\nStarting benchmark\n" << std::flush;
   auto start_time = std::chrono::high_resolution_clock::now();
   int i = 0;
   for (const Behavior& curr_behavior : behavior) {
@@ -106,9 +106,10 @@ void testspend() {
   std::cout << "\n\n================ outcome ================\n";
   auto duration_time = std::chrono::duration_cast<std::chrono::nanoseconds>(
       end_time - start_time);
-  std::cout << "\ntotal spending time: " << duration_time.count() / 1'000'000
+  std::cout << "\nTotal number of test data: " << test_data_size << '\n';
+  std::cout << "Total spending time: " << duration_time.count() / 1'000'000
             << "ms\n";
-  std::cout << "average spending time: "
+  std::cout << "Average spending time: "
             << duration_time.count() / test_data_size << "ns\n";
 }
 

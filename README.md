@@ -1,10 +1,33 @@
 # Limit Order Book
 
+## Intro
+
 本專案為以 c++ 實做的 limit order book (LOB)。
 
 side project 最初為 DSOOP 中 Red black tree 作業延伸而成。在此基礎之上，將底層 RBT 與 BST 修改成了泛型並且增加了訂單管理、撮合與取消以及資料查詢等 LOB 的核心功能。
 
 此 side project 的長期目標為能夠承接實盤的 point in time 數據，並作為未來量化交易的學習與研究工具。
+
+---
+## Project Highlights
+
+- Generic Binary Search Tree
+- Generic Red-Black Tree
+- Price-Time Priority Matching Engine
+- O(1) Order Lookup via Hash Table
+- 超過 1000 行的核心程式碼
+- 超過 800 行的測試與 Benchmark 程式
+
+---
+## Feature
+### 資料查詢 time complexity
+
+| Function           | Complexity |
+| ------------------ | ---------- |
+| Best Bid / Ask     | O(1)       |
+| Volume At Price    | O(log N)   |
+| Top-K Price Levels | O(K)       |
+| Order Lookup       | O(1)       |
 
 ---
 ## 目前功能
@@ -33,90 +56,73 @@ side project 最初為 DSOOP 中 Red black tree 作業延伸而成。在此基�
 - Top-K Price Levels  
 - Volume At Price
 ---
-## 系統架構
+## Build & Run
 
-### 設計理念
+本專案目前主要於 Linux 環境下開發與測試，環境如下：
 
-此 side project 以時間與價格為優先度來排序。
+- OS: MX Linux 23.6 (基於 Debian 12 延伸而成)
+- Complier: g++ 12.2.0
+- Standard: c++ 17
 
-- Price Priority：由 Red-Black Tree 維護價格排序  
-- Time Priority：由 PriceLevel 內部 FIFO Queue 維護  
-- Fast Lookup：透過 Order Map 提供快速訂單查詢與取消
+### 相依需求
 
-### 總體架構示意圖
+- c++ 17 以上
+- GNU make
 
-```mermaid
-flowchart TD
+### 編譯測試程式
 
-    LOB[Limit Order Book]
-
-    BUY[Buyer Tree]
-    SELL[Seller Tree]
-
-    MAP[Order Map]
-
-    BPL[Buy Price Levels]
-    SPL[Sell Price Levels]
-
-    ORD[Order Queue]
-
-    LOB --> BUY
-    LOB --> SELL
-    LOB --> MAP
-
-    BUY --> BPL
-    SELL --> SPL
-
-    BPL --> ORD
-    SPL --> ORD
+```bash
+make test_program
 ```
 
-### LOB 架構
+### 執行測試
 
-```
-LOB
-├─ Buyer Tree
-├─ Seller Tree
-└─ Order Map
+```bash
+make test
 ```
 
-- Buyer Tree：儲存 buyer price level（高價優先）  
-- Seller Tree：儲存 seller price level（低價優先）  
-- Order Map：提供 O(1) time complexity 訂單查詢與取消
+### 編譯 Benchmark
 
-### Price Level 架構
-
-```text
-PriceLevel
-├─ price
-├─ total_volume
-└─ FIFO Order Queue
+```bash
+make benchmark_program
 ```
 
-同價格的訂單依照 first in first out 排序。
+### 執行 Benchmark
 
-### Price Level 與 Order Queue 關係示意圖
+```bash
+make run_benchmark
+```
 
-```mermaid
-flowchart LR
+### 清除物件與執行檔
 
-    Tree[Red Black Tree]
+```bash
+make clean
+```
 
-    PL1[Price 100]
-    PL2[Price 101]
-    PL3[Price 102]
+---
+## Roadmap
 
-    O1[Order]
-    O2[Order]
-    O3[Order]
-    O4[Order]
+### 短期目標
 
-    Tree --> PL1
-    Tree --> PL2
-    Tree --> PL3
+- 補充更多 Boundary Test
+- 增加 Randomized Test
+- Benchmark 擴充
+- 改善文件與註解
 
-    PL1 --> O1
-    PL1 --> O2
-    PL2 --> O3
-    PL3 --> O4
+### 長期目標
+
+- 支援輸入 Point-in-Time 的 data
+- Order Book 狀態的視覺化
+- 增加更多分析工具
+- 更多商品的支援
+
+---
+## Document 
+
+詳細設計請參閱
+
+```
+docs/
+├─ architecture.md
+└─ benchmark.md
 ```
