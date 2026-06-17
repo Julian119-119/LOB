@@ -2,7 +2,7 @@
 
 ## Intro
 
-本專案為以 c++ 實做的 limit order book (LOB)。
+本專案為以 c++ 實做的 Limit Order Book (LOB)。
 
 side project 最初為 DSOOP 中 Red black tree 作業延伸而成。在此基礎之上，將底層 RBT 與 BST 修改成了泛型並且增加了訂單管理、撮合與取消以及資料查詢等 LOB 的核心功能。
 
@@ -15,11 +15,9 @@ side project 最初為 DSOOP 中 Red black tree 作業延伸而成。在此基�
 - Generic Red-Black Tree
 - Price-Time Priority Matching Engine
 - O(1) Order Lookup via Hash Table
-- 超過 1000 行的核心程式碼
-- 超過 800 行的測試與 Benchmark 程式
 
 ---
-## Feature
+## Features
 ### 資料查詢 time complexity
 
 | Function           | Complexity |
@@ -61,7 +59,7 @@ side project 最初為 DSOOP 中 Red black tree 作業延伸而成。在此基�
 本專案目前主要於 Linux 環境下開發與測試，環境如下：
 
 - OS: MX Linux 23.6 (基於 Debian 12 延伸而成)
-- Complier: g++ 12.2.0
+- Compiler: g++ 12.2.0
 - Standard: c++ 17
 
 ### 相依需求
