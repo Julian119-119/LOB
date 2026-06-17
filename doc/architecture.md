@@ -7,7 +7,7 @@
 
 - Price Priority：由 Red-Black Tree 維護價格排序  
 - Time Priority：由 PriceLevel 內部 FIFO Queue 維護  
-- Fast Lookup：透過 Order Map 提供快速訂單查詢與取消
+- Fast Lookup：透過 order_map 提供快速訂單查詢與取消
 
 ## 示意圖
 ### 總體架構示意圖
@@ -17,13 +17,13 @@ flowchart TD
 
     LOB[Limit Order Book]
 
-    BUY[Buyer Tree]
-    SELL[Seller Tree]
+    BUY[buyer_tree]
+    SELL[seller_tree]
 
-    MAP[Order Map]
-
-    BPL[Buy Price Levels]
-    SPL[Sell Price Levels]
+    MAP[order_map]
+    
+    BPL[Buy Side<br>Price Levels]
+    SPL[Sell Side<br>Price Levels]
 
     ORD[Order Queue]
 
@@ -42,9 +42,9 @@ flowchart TD
 
 ```
 LOB
-├─ Buyer Tree
-├─ Seller Tree
-└─ Order Map
+├─ buyer_tree
+├─ seller_tree
+└─ order_map
 ```
 
 ### Price Level 架構
@@ -61,7 +61,7 @@ PriceLevel
 ```mermaid
 flowchart LR
 
-    Tree[Red Black Tree]
+    Tree[Red-Black Tree]
 
     PL1[Price 100]
     PL2[Price 101]
@@ -91,10 +91,11 @@ flowchart LR
 * `volume`: 訂單數量（買或賣多少股/張）。
 * `timestamp`: 記錄下單的絕對時間（供回測與稽核使用，在系統中以 queue 中的位置代表相對時間）。
 * `price`: 記錄該筆訂單的價格（保留此欄位以利刪單時能查找對應的 Price Level）。
+* `Time_In_Force`: 紀錄訂單的 time in force 種類 
 
 ### 2. Price Level
 
-實際存進紅黑樹 (RBT) 的節點結構，記錄單一價格檔位的深度資訊。
+Red-Black Tree 的 Node Data，記錄單一 price level 的資訊。
 * `price`: 該 level 的價格，作為 RBT 排序與查找的唯一 Key value。
 * `total_volume`: 該檔位目前所有訂單數量的總和（總股數），提供報價查詢。
 * `order_queue`: 具備 FIFO 特性的 container (`list`)，儲存相同價格下的訂單，維持時間優先。
@@ -103,6 +104,6 @@ flowchart LR
 
 負責搓合邏輯 price level 的管理。
 
-* `BuyTree` (RBT): 儲存買方 Price Level，價格高者優先 (Max-Tree)。
-* `SellTree` (RBT): 儲存賣方 Price Level，價格低者優先 (Min-Tree)。
-* `OrderMap`: 訂單映射表 (`unordered_map`)，紀錄 `order_id` 與在 queue 中記憶體位置 (Iterator) 的對應關係，確保隨機刪單為 O(1) 的 time complexity。
+* `buyer_tree` (Red-Black Tree): 儲存買方 Price Level，價格高者優先 (Max-Tree)。
+* `sell_tree` (Red-Black Tree): 儲存賣方 Price Level，價格低者優先 (Min-Tree)。
+* `order_map`: 訂單映射表 (`unordered_map`)，紀錄 `order_id` 與在 queue 中記憶體位置 (Iterator) 的對應關係，確保隨機刪單為 O(1) 的 time complexity。

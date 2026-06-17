@@ -15,6 +15,9 @@ static constexpr uint64_t VOLUME_NO_VALUE =
     std::numeric_limits<uint64_t>::max();
 static constexpr double PRICE_NO_VALUE = std::numeric_limits<double>::max();
 
+/******************************************************************
+ * is_valid function: 用於判斷回傳值是否為真                      *
+ ******************************************************************/
 inline bool is_valid_idx(uint32_t idx) { return idx != IDX_NO_VALUE; }
 
 inline bool is_valid_volume(uint64_t volume) {
@@ -23,6 +26,10 @@ inline bool is_valid_volume(uint64_t volume) {
 
 inline bool is_valid_price(double price) { return price != PRICE_NO_VALUE; }
 
+/******************************************************************
+ * Side: 標記該筆訂單為買方還是賣方                               *
+ * Time_In_Force: 標記該筆訂單的 time in force 種類               *
+ ******************************************************************/
 enum class Side : uint8_t { BUY, SELL };
 enum class Time_In_Force : uint8_t { GTC, IOC, FOK };
 
@@ -36,9 +43,9 @@ inline std::ostream& operator<<(std::ostream& os, const Side& side) {
   return os;
 }
 
-/************************************************************
- * Order: 訂單。紀錄每筆交易                                *
- ************************************************************/
+/******************************************************************
+ * Order: 訂單。紀錄每筆交易                                      *
+ ******************************************************************/
 struct Order {
   uint32_t order_id;
   Side side;
@@ -65,9 +72,9 @@ inline std::ostream& operator<<(std::ostream& os, const Order& order) {
   return os;
 }
 
-/***********************************************************
- * PriceLevel: RBT node 儲存的 class。用於紀錄價格檔位     *
- ***********************************************************/
+/******************************************************************
+ * PriceLevel: RBT node 儲存的 class。用於紀錄價格檔位            *
+ ******************************************************************/
 class PriceLevel {
  private:
   double price;
@@ -98,18 +105,18 @@ inline std::ostream& operator<<(std::ostream& os, const PriceLevel& pl) {
   return os;
 }
 
-/*****************************************************
- * OrderLocation: 儲存於 hash table 中，用於快速查詢 *
- *****************************************************/
+/******************************************************************
+ * OrderLocation: 儲存於 hash table 中，用於快速查詢              *
+ ******************************************************************/
 struct OrderLocation {
   PriceLevel* pos_price_level;
   std::pmr::list<Order>::iterator order_it;
   Side side;
 };
 
-/*****************************************************
- * PriceLevelInfo: 用於回傳資訊                      *
- *****************************************************/
+/******************************************************************
+ * PriceLevelInfo: 用於回傳資訊                                   *
+ ******************************************************************/
 struct PriceLevelInfo {
   double price;
   uint64_t volume;
