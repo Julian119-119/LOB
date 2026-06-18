@@ -1,8 +1,5 @@
 #include "LOB_type.hpp"
 
-#include <algorithm>
-#include <iostream>
-
 auto PriceLevel::push(Order newOrder) {
   total_volume += newOrder.volume;
   // 新的單必定比舊的時間要晚，所以 push 在最後面
