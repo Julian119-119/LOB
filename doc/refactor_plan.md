@@ -4,9 +4,9 @@
 
 這個 LOB 專案的紅黑樹是從資料結構課程作業延伸而來，`RedBlackTree` 目前 inherit 自 `BinarySearchTree`，node 用 `shared_ptr` 管理。實際追過原始碼後，確認了兩個核心問題：
 
-- **效能瓶頸不是 virtual inheritance**。<br>樹的類別之間沒有任何 vtable 呼叫，`RedBlackTree` 一律用 `BinarySearchTree<T,Compare>::xxx(...)` 明確 qualify 呼叫，完全 static binding。真正的成本在 `RBTreeNode::getColor`/`setColor`（`include/RedBlackTree.hpp:44-59`）。每次都要對 `shared_ptr<TreeNode<T>>` 做 `dynamic_pointer_cast<RBTreeNode<T>>`，這個 RTTI cast 在 `insert_fixup`/`remove_fixup` 幾乎每個步驟都會觸發（整個檔案有 20+ 處呼叫），是 RBT 的隱藏成本。
-- **node 的 ownership model 有結構性風險**。<br>`TreeNode`（`include/BinarySearchTree.hpp:8-18`）的 `parent`/`left`/`right` 全部是 `shared_ptr`，形成 parent <-> child 的 reference cycle。目前靠 destructor 呼叫的 `clear()`（`BinarySearchTree.hpp:59-67`）手動走訪、逐一斷開雙向 pointer 才不會 leak——任何新增的樹操作只要忘記同時清空雙向 pointer，就會產生難以 debug 的 memory leak。
-- **沒有真正的 iterator**。<br>`get_volume_at_price`、`get_top_k_info`、`order_matching` 內的 FOK pre-check（`src/LOB_type.cpp:76-89, 98-117, 123-149`）都是手動串接 `get_leftmost_node()` + `get_successor()`，這正是想用 iterator 取代的重複 pattern。
+- **效能瓶頸**：<br>樹的類別之間沒有任何 vtable 呼叫，`RedBlackTree` 一律用 `BinarySearchTree<T,Compare>::xxx(...)` 明確 qualify 呼叫，完全 static binding。真正的成本在 `RBTreeNode::getColor`/`setColor`（`include/RedBlackTree.hpp:44-59`）。每次都要對 `shared_ptr<TreeNode<T>>` 做 `dynamic_pointer_cast<RBTreeNode<T>>`，這個 RTTI cast 在 `insert_fixup`/`remove_fixup` 幾乎每個步驟都會觸發，是 RBT 的隱藏成本。
+- **node 的 ownership model 有結構性風險**：<br>`TreeNode` 的 `parent`/`left`/`right` 全部是 `shared_ptr`，形成 parent <-> child 的 reference cycle。目前是靠 destructor 呼叫的 `clear()` 手動走訪、逐一斷開雙向 pointer 才不會 leak。任何新增的樹操作只要忘記同時清空雙向 pointer，就會產生難以 debug 的 memory leak。
+- **沒有真正的 iterator**：<br>`get_volume_at_price`、`get_top_k_info`、`order_matching` 內的 FOK pre-check 都是手動串接 `get_leftmost_node()` + `get_successor()`，這正是想用 iterator 取代的重複 pattern。
 
 目的：拆掉 BST/RBT 的類別分裂、把 `shared_ptr` 換成 ownership 更明確的 `unique_ptr`（children）+ raw pointer（parent），並手刻一個 STL 相容的 bidirectional iterator，取代目前的手動走訪 pattern。
 
@@ -14,8 +14,8 @@
 
 **要做的事情：**
 
-1. **Node ownership**：<Br>`left`/`right` 改為 `std::unique_ptr<Node>`，`parent` 改為 raw pointer（non-owning）。樹透過 unique_ptr chain 自動 recursive destruct，不再需要手動 `clear()` 斷 cycle。
-2. **類別結構**：<br>`BinarySearchTree` 整個退役，`include/BinarySearchTree.hpp` 直接刪除。`RedBlackTree` 改寫成單一 flat 類別，node 內部直接存 `Color` 欄位，不再有 base/derived node 分裂，也不再有任何 `dynamic_pointer_cast`。
+1. **Node ownership**：<Br>`left`/`right` 改為 `std::unique_ptr<Node>`，`parent` 改為 raw pointer（non-owning）。樹透過 unique_ptr chain 自動 recursive destruct，不再需要手動使用 `clear()` 斷 cycle。
+2. **類別結構**：<br>`BinarySearchTree` 整個退役，`include/BinarySearchTree.hpp` 直接刪除。`RedBlackTree` 改寫成單一類別，node 內部直接存 `Color` 欄位，不再有 base/derived node 分裂，也不再有任何 `dynamic_pointer_cast`。
 3. **Iterator**：<Br>完整 STL 風格的 bidirectional iterator（`operator++`/`operator--`、`begin()`/`end()`、標準 iterator traits），可搭配 range-for 與 `<algorithm>` 使用。
 4. **範圍邊界**：<Br>僅動樹與 iterator，不動 `Trade`、feed adapter、thread safety 等（列在文末附錄，作為之後的獨立規劃項目）。
 
@@ -25,10 +25,10 @@
 | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `include/BinarySearchTree.hpp`                                                | **刪除**（`git rm`）。已確認除了 `RedBlackTree.hpp` 和 `test_BST_RBT.cpp` 外，沒有任何地方 reference `TreeNode`/`BinarySearchTree`/`get_successor`/`get_leftmost_node`。 |
 | `include/RedBlackTree.hpp`                                                    | **原地改寫**（保留檔名與類別名 `RedBlackTree<T,Compare>`，讓 `LOB_type.hpp` 完全不用改）。                                                                                 |
-| `src/LOB_type.cpp`                                                            | 6 處呼叫點改用 iterator API（見 §4 對照表）。`insert_emplace`/`remove` 呼叫點不用動。                                                                                    |
+| `src/LOB_type.cpp`                                                            | 6 處呼叫點改用 iterator API。`insert_emplace`/`remove` 呼叫點不用動。                                                                                              |
 | `include/LOB_type.hpp`                                                        | **不需要改動**——只是把 `RedBlackTree<PriceLevel,...>` 當 member 型別使用，沒有直接碰 node 型別。                                                                           |
-| `test/test_BST_RBT.cpp` + `test_helper.hpp` + `test_main.cpp`                 | 改寫（見 §4）。                                                                                                                                            |
-| `test/test_LOB_order.cpp`、`test/test_LOB_query.cpp`、`benchmark/benchmark.cpp` | **不需要改動**——只透過 `LOB` 的 public API 操作，是這次重構的 regression test 安全網。                                                                                     |
+| `test/test_BST_RBT.cpp` + `test_helper.hpp` + `test_main.cpp`                 | 改寫。                                                                                                                                                  |
+| `test/test_LOB_order.cpp`、`test/test_LOB_query.cpp`、`benchmark/benchmark.cpp` | **不需要改動**。只透過 `LOB` 的 public API 操作，是這次重構的 regression test 安全網。                                                                                      |
 | `Makefile`                                                                    | 不需要改動。                                                                                                                                               |
 
 ## 3. 設計目標的細節
@@ -123,11 +123,9 @@ void rotate_left(Node* x) {
 
 `owning_slot(n)` ：<Br>回傳目前持有 `n` ownership 的那個 `unique_ptr<Node>`（可能是 `root_`，或 `n->parent->left`，或 `n->parent->right`）的 reference。為了後續的 `std::move()` 來準備，先拿取真實的 `unique_ptr<Node>` 才有辦法移動 unique pointer 的指向
 
-`rotate_right` 為完全鏡像（互換 `left`/`right`、`x`/`y`）。rotation 不會動到 `leftmost_`/`rightmost_`（rotation 不改變整棵樹的最小/最大值身分，與現況相同）。
-
 ### 3.3 `remove()`：兩個 child 的 splice case（整個重構風險最高的部分）
 
-延續 `RedBlackTree.hpp:290-309` 現有邏輯，但每個分支都必須**先把 `z->left`/`z->right` 完整 `std::move` 出去，再讓擁有 `z` 的 `unique_ptr` 離開作用域**——否則會出現「同一個 subtree 既被 move 進 y、又被 old_z 的 recursive destructor 摧毀」的 double-free。詳細分支序列（含 `y->parent == z` 與 `y->parent != z` 兩種 case）與現有 shared_ptr 版本（`RedBlackTree.hpp:290-309`）的結構完全對應，只是每一步的 pointer assignment 改成 `std::move`。`insert_fixup`/`remove_fixup` 的控制流程（LL/LR/RL/RR case 判斷）本身不變，只是把 `RBTreeNode<T>::getColor/setColor(...)` 與 `dynamic_pointer_cast<RBTreeNode<T>>(...)` 換成直接的 `Node*` 欄位存取和一個 null-safe 的 `color_of()` helper。
+因為在 `Node` 之中，將 pointer 的種類改為了往上指的 `raw pointer` 與兩個向下的 `unique_ptr`，因此必須要在每個分支時，先將 `z -> left / z->right` 完整的 `std::move` 出去，再讓擁有 `z` 的 `unique_ptr` 離開作用域。否則使 `child` 的往上指的 `raw pointer` 產生 dangling pointer.
 
 ### 3.4 Iterator 設計
 
@@ -162,7 +160,7 @@ using const_iterator = rbt_iterator<true>;
 
 - `begin()` 回傳 `iterator(leftmost_, this)`，O(1)，沿用現有的 `leftmost_` cache。
 - `end()` 回傳 `iterator(nullptr, this)`，空樹時 `begin() == end()` 自然成立。
-- **`--end()` 要能命中最大值**這個經典難點：新增一個對稱的 `rightmost_` cache（維護方式跟 `leftmost_` 完全對稱，寫在 `insert`/`insert_emplace`/`remove` 裡，rotation 不用管），讓 `--end()` 保持 O(1)，不需要退化成從 root 往下找。
+- **`--end()` 要能命中最大值**：新增一個對稱的 `rightmost_`，讓 `--end()` 保持 O(1)，不需要退化成從 root 往下找。
 - `--begin()`（walk 到第一個元素之前）視為 undefined behavior，跟 `std::map` 的 iterator 約定一致，不用額外防呆。
 
 ### 3.5 保留 heterogeneous comparator 支援
@@ -173,15 +171,15 @@ using const_iterator = rbt_iterator<true>;
 
 ### `src/LOB_type.cpp` 呼叫點對照表
 
-| 位置 | 現況 | 改為 |
-|---|---|---|
-| `get_best_bid/ask_price/volume`（17-45 行） | `buyer_tree.get_leftmost_node()->data.getprice()` | `buyer_tree.begin()->getprice()` |
-| `get_volume_at_price`（73-96 行） | leftmost + 逐一 `get_successor` 比對 price（**目前實際是 O(k)，並非 README 宣稱的 O(log N)**） | `auto it = buyer_tree.find(tar_price); return it != buyer_tree.end() ? it->get_total_volume() : VOLUME_NO_VALUE;`（真正的 O(log N) 查找，順便修掉這個複雜度落差） |
-| `get_top_k_info`（98-117 行） | leftmost + `get_successor` 迴圈 | `for (auto it = tree.begin(); it != tree.end() && i < k; ++it, ++i) info.emplace_back(it->getprice(), it->get_total_volume());` |
-| `order_matching` FOK 預檢查（122-150 行） | `while(1)` + `get_successor` | 相同迴圈結構，`order_it = X_tree.get_successor(order_it)` 換成 `++order_it`，null 檢查換成 `order_it != X_tree.end()` |
-| `order_matching`（155, 193 行） | `&seller_tree.get_leftmost_node()->data` | `&*seller_tree.begin()` |
+| 位置                                       | 現況                                                                            | 改為                                                                                                                                             |
+| ---------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_best_bid/ask_price/volume`（17-45 行） | `buyer_tree.get_leftmost_node()->data.getprice()`                             | `buyer_tree.begin()->getprice()`                                                                                                               |
+| `get_volume_at_price`（73-96 行）           | leftmost + 逐一 `get_successor` 比對 price（**目前實際是 O(k)，並非 README 宣稱的 O(log N)**） | `auto it = buyer_tree.find(tar_price); return it != buyer_tree.end() ? it->get_total_volume() : VOLUME_NO_VALUE;`（真正的 O(log N) 查找，順便修掉這個複雜度落差） |
+| `get_top_k_info`（98-117 行）               | leftmost + `get_successor` 迴圈                                                 | `for (auto it = tree.begin(); it != tree.end() && i < k; ++it, ++i) info.emplace_back(it->getprice(), it->get_total_volume());`                |
+| `order_matching` FOK 預檢查（122-150 行）      | `while(1)` + `get_successor`                                                  | 相同迴圈結構，`order_it = X_tree.get_successor(order_it)` 換成 `++order_it`，null 檢查換成 `order_it != X_tree.end()`                                        |
+| `order_matching`（155, 193 行）             | `&seller_tree.get_leftmost_node()->data`                                      | `&*seller_tree.begin()`                                                                                                                        |
 
-`insert_emplace`/`remove` 呼叫點（172, 183, 210, 221, 245, 247 行）維持原樣，因為這兩個 method 的簽名沒有變。
+`insert_emplace`/`remove` 呼叫點維持原樣，因為這兩個 method 的簽名沒有變。
 
 ### `test/test_BST_RBT.cpp` 改動
 
@@ -192,11 +190,10 @@ using const_iterator = rbt_iterator<true>;
 
 ## 5. 風險
 
-- **`owning_slot()` 回傳的 reference 存續時間**：因為 `root_`/`parent->left`/`parent->right` 是固定位址的 member（不會因為這次操作而被重新配置），這個 reference 在整個 rotation/transplant 呼叫期間都有效——但這是隱性假設，建議在 `owning_slot` 上寫一行註解說明，避免未來有人把 children 換成 `vector<unique_ptr<Node>>` 之類的 container 型別而不小心破壞這個前提。
+- **`owning_slot()` 回傳的 reference 存續時間**：<Br>因為 `root_`/`parent->left`/`parent->right` 是固定位址的 member（不會因為這次操作而被重新配置），這個 reference 在整個 rotation/transplant 呼叫期間都有效。但這是被寫入的方式（在 `Node` 中使用了 `unique_ptr`）所保證的，因此在 `owning_slot` 上寫一行註解說明，避免未來有人把 children 換成 `vector<unique_ptr<Node>>` 之類的 container 型別而不小心破壞這個前提。
 - **`transplant` 的「不動 children」contract**必須用註解明確標出，呼叫端要在呼叫前把想保留的 subtree `std::move` 出去。
-- **`remove()` 兩個 child 的分支是整個重構風險最高的地方**：務必確保 `z->left`/`z->right` 在 `old_z` 離開作用域前已經完全被 move 走，這是避免 double-free 的關鍵 invariant。實作順序 §6 步驟 8 的 sanitizer 驗證就是針對這裡的。
+- **`remove()` 兩個 child 的分支是整個重構風險最高的地方**：務必確保 `z->left`/`z->right` 在 `old_z` 離開作用域前已經完全被 move 走，這是避免 double-free 的關鍵。
 - Fixup 迴圈裡在呼叫過 `rotate_left`/`rotate_right` 之後又讀取 `->parent`，這點跟現有 shared_ptr 版本行為一致（rotation 本身就會更新受影響 node 的 `parent`），不是新風險，但值得在 code review 時明確提醒不要「優化」成快取一個舊的 `Node*`。
-- unique_ptr chain recursive destruct 的 stack depth：紅黑樹高度是 `O(log n)`，即使十億節點也只有約 60 層，非 issue。這也是把不平衡的 `BinarySearchTree` 一併退役的附帶好處——不平衡 BST 理論上可以有 O(n) 高度，destruct 時有真正的 stack overflow 風險。
 
 ## 6. 實作順序與驗證
 
