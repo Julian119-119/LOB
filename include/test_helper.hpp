@@ -5,6 +5,7 @@
 void testSmallest();
 void testInt();
 void testString();
+void testInvariant();
 
 /* test RBT */
 void testRedBlackTrees();

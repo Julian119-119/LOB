@@ -45,7 +45,7 @@ class BinarySearchTree {
   // 用來將 v 頂替 u，但只處理「父子連結」，不處理 left and right subtree
   // 回傳暫存 u 的 unique_ptr
   std::unique_ptr<TreeNode<T>> transplant(TreeNode<T>* u,
-                             TreeNode<T>* v);  
+                                          std::unique_ptr<TreeNode<T>> v);
   // 為了 transplant 使用 std::move() ，指向 n 的 unique_ptr，並回傳
   // reference，使它可以用 std::move()
   std::unique_ptr<TreeNode<T>>& owning_slot(TreeNode<T>* n);
@@ -138,7 +138,7 @@ TreeNode<T>* BinarySearchTree<T, Compare>::insert(TreeNode<T>* node) {
       }
     } else if (comp(parent->data, node->data)) {
       if (parent->right) {
-        parent = parent->right;
+        parent = parent->right.get();
       } else {
         parent->right.reset(node);
         node->parent = parent;
@@ -158,22 +158,26 @@ TreeNode<T>* BinarySearchTree<T, Compare>::insert(T data) {
 }
 
 template <typename T, typename Compare>
-std::unique_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::transplant(TreeNode<T>* u, TreeNode<T>* v) {
-  // 將 v 給儲存 u 的 unique_ptr 與將 u 給暫存的 unique_ptr (old)
-  std::unique_ptr<TreeNode<T>>& slot = owning_slot(u);
-  std::unique_ptr<TreeNode<T>> old = std::move(u);
-  slot = std::move(v);
+std::unique_ptr<TreeNode<T>> BinarySearchTree<T, Compare>::transplant(
+    TreeNode<T>* u, std::unique_ptr<TreeNode<T>> v) {
   // 更改向上的路線
   if (v) v->parent = u->parent;
-  return slot;
+  // 將 v 給儲存 u 的 unique_ptr 與將 u 給暫存的 unique_ptr (old)
+  std::unique_ptr<TreeNode<T>>& slot = owning_slot(u);
+  std::unique_ptr<TreeNode<T>> old = std::move(slot);
+  slot = std::move(v);
+  return old;
 }
 
 template <typename T, typename Compare>
-std::unique_ptr<TreeNode<T>>& BinarySearchTree<T, Compare>::owning_slot(TreeNode<T>* n) {
-  if (!n->parent)  return root_
-  return (n->parent->left.get() == n) ? n->parent->left : n->parent->right;
+std::unique_ptr<TreeNode<T>>& BinarySearchTree<T, Compare>::owning_slot(
+    TreeNode<T>* n) {
+  if (!n->parent) {
+    return root_;
+  } else {
+    return (n->parent->left.get() == n) ? n->parent->left : n->parent->right;
+  }
 }
-
 
 template <typename T, typename Compare>
 void BinarySearchTree<T, Compare>::remove(T data) {
@@ -195,58 +199,51 @@ void BinarySearchTree<T, Compare>::remove(T data) {
   if (tar->left && tar->right) {
     TreeNode<T>* substituteNode = tar->right.get();
     while (substituteNode->left) substituteNode = substituteNode->left.get();
-    transplant(substituteNode, substituteNode->right);
-    substituteNode->left = tar->left;
-    substituteNode->right = tar->right;
-    transplant(tar, substituteNode);
-    tar->left = nullptr;
-    tar->right = nullptr;
-    tar->parent = nullptr;
-    if (substituteNode->left) substituteNode->left->parent = substituteNode;
-    if (substituteNode->right) substituteNode->right->parent = substituteNode;
+    std::unique_ptr<TreeNode<T>> tmp_substituteNode =
+        transplant(substituteNode, std::move(substituteNode->right));
+    tmp_substituteNode->left = std::move(tar->left);
+    tmp_substituteNode->left->parent = tmp_substituteNode.get();
+    tmp_substituteNode->right = std::move(tar->right);
+    tmp_substituteNode->right->parent = tmp_substituteNode.get();
+    transplant(tar, std::move(tmp_substituteNode));
   } else if (tar->left) {
-    transplant(tar, tar->left);
+    transplant(tar, std::move(tar->left));
   } else {
-    transplant(tar, tar->right);
+    transplant(tar, std::move(tar->right));
   }
 }
 
 template <typename T, typename Compare>
-void BinarySearchTree<T, Compare>::rotate_left(std::shared_ptr<TreeNode<T>> x) {
+void BinarySearchTree<T, Compare>::rotate_left(TreeNode<T>* x) {
   if (!x || !x->right) return;
 
-  std::shared_ptr<TreeNode<T>> substituteNode = x->right;
-  transplant(x, substituteNode);
-  x->right = nullptr;
+  TreeNode<T>* substituteNode = x->right.get();
+  std::unique_ptr<TreeNode<T>> tmp_x = transplant(x, std::move(x->right));
   if (substituteNode->left) {
-    std::shared_ptr<TreeNode<T>> leftSubtree = substituteNode->left;
-    substituteNode->left = x;
-    leftSubtree->parent = x;
-    x->right = leftSubtree;
-    x->parent = substituteNode;
+    tmp_x->right = std::move(substituteNode->left);
+    tmp_x->right->parent = tmp_x.get();
+    tmp_x->parent = substituteNode;
+    substituteNode->left = std::move(tmp_x);
   } else {
-    substituteNode->left = x;
-    x->parent = substituteNode;
+    tmp_x->parent = substituteNode;
+    substituteNode->left = std::move(tmp_x);
   }
 }
 
 template <typename T, typename Compare>
-void BinarySearchTree<T, Compare>::rotate_right(
-    std::shared_ptr<TreeNode<T>> y) {
+void BinarySearchTree<T, Compare>::rotate_right(TreeNode<T>* y) {
   if (!y || !y->left) return;
 
-  std::shared_ptr<TreeNode<T>> substituteNode = y->left;
-  transplant(y, substituteNode);
-  y->left = nullptr;
+  TreeNode<T>* substituteNode = y->left;
+  std::unique_ptr<TreeNode<T>> tmp_y = transplant(y, std::move(y->left));
   if (substituteNode->right) {
-    std::shared_ptr<TreeNode<T>> rightSubtree = substituteNode->right;
-    substituteNode->right = y;
-    y->parent = substituteNode;
-    y->left = rightSubtree;
-    rightSubtree->parent = y;
+    tmp_y->left = std::move(substituteNode->right);
+    tmp_y->left->parent = tmp_y.get();
+    tmp_y->parent = substituteNode;
+    substituteNode->right = std::move(tmp_y);
   } else {
-    substituteNode->right = y;
-    y->parent = substituteNode;
+    tmp_y->parent = substituteNode;
+    substituteNode->right = std::move(tmp_y);
   }
 }
 
@@ -255,7 +252,7 @@ std::string BinarySearchTree<T, Compare>::inorder() {
   if (root_) {
     std::stringstream inorderString;
     bool isFirst = true;
-    inorder_helper(root_, inorderString, isFirst);
+    inorder_helper(root_.get(), inorderString, isFirst);
     return inorderString.str();
   } else {
     return "";
@@ -263,19 +260,19 @@ std::string BinarySearchTree<T, Compare>::inorder() {
 }
 
 template <typename T, typename Compare>
-void BinarySearchTree<T, Compare>::inorder_helper(
-    std::shared_ptr<TreeNode<T>> subroot, std::stringstream& str,
-    bool& isFirst) {
+void BinarySearchTree<T, Compare>::inorder_helper(TreeNode<T>* subroot,
+                                                  std::stringstream& str,
+                                                  bool& isFirst) {
   if (!subroot)
     return;
   else {
-    inorder_helper(subroot->left, str, isFirst);
+    inorder_helper(subroot->left.get(), str, isFirst);
     if (isFirst) {
       isFirst = false;
       str << subroot->data;
     } else
       str << ' ' << subroot->data;
-    inorder_helper(subroot->right, str, isFirst);
+    inorder_helper(subroot->right.get(), str, isFirst);
   }
 }
 

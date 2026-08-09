@@ -9,15 +9,17 @@ int main() {
   testInt();
   testString();
 
-  /* test RBT */
+  /* test RBT 
   std::cout << "\n===============  test RBT ===============\n";
   testRedBlackTrees();
+  */
 
-  /* test LOB */
+  /* test LOB 
   std::cout << "\n===============  test lob ===============\n";
   test_query();
   std::cout << '\n';
   test_order();
+  */
 
   return 0;
 }

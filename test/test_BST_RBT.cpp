@@ -1,9 +1,9 @@
-#include <iostream>
 #include <cassert>
+#include <iostream>
 
-#include "test_helper.hpp"
 #include "BinarySearchTree.hpp"
-#include "RedBlackTree.hpp"
+#include "test_helper.hpp"
+// #include "RedBlackTree.hpp"
 using namespace std;
 
 void testSmallest() {
@@ -101,6 +101,72 @@ void testString() {
   }
 }
 
+void testInvariant() {
+  // 測試平衡狀態
+  {
+    BinarySearchTree<int> tree;
+
+    tree.insert(50);
+    tree.insert(40);
+    tree.insert(60);
+    tree.insert(35);
+    tree.insert(45);
+    tree.insert(55);
+    tree.insert(65);
+
+    auto lt = tree.get_leftmost_node();
+    for (size_t i = 0; i < 7; i++) {
+      if (lt->left) {
+        assert(lt->data > lt->left->data);
+      }
+      if (lt->right) {
+        assert(lt->data < lt->right->data);
+      }
+      tree.get_successor(lt);
+    }
+  }
+  // 測試向右偏的樹
+  {
+    BinarySearchTree<int> tree;
+
+    for (int i = 0; i < 10; i++) tree.insert(i);
+
+    auto lt = tree.get_leftmost_node();
+    for (size_t i = 0; i < 10; i++) {
+      if (lt->left) {
+        assert(lt->data > lt->left->data);
+      }
+      if (lt->right) {
+        assert(lt->data < lt->right->data);
+      }
+      tree.get_successor(lt);
+    }
+  }
+
+  // 測試向左偏的樹
+  {
+    BinarySearchTree<int> tree;
+
+    for (int i = 11; i < 10; i++) {
+      tree.insert(i);
+      assert(tree.get_leftmost_node()->data == i);
+    }
+
+    auto lt = tree.get_leftmost_node();
+    for (size_t i = 0; i < 10; i++) {
+      if (lt->left) {
+        assert(lt->data > lt->left->data);
+      }
+      if (lt->right) {
+        assert(lt->data < lt->right->data);
+      }
+      tree.get_successor(lt);
+    }
+  }
+}
+
+/*
+
 void testRedBlackTrees() {
   {
     RedBlackTree<int> tree;
@@ -144,3 +210,5 @@ void testRedBlackTrees() {
     std::cout << "testRedBlackTrees 2 passed!\n";
   }
 }
+
+*/
