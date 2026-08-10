@@ -9,10 +9,10 @@ int main() {
   testInt();
   testString();
 
-  /* test RBT 
+  /* test RBT */ 
   std::cout << "\n===============  test RBT ===============\n";
   testRedBlackTrees();
-  */
+  
 
   /* test LOB 
   std::cout << "\n===============  test lob ===============\n";

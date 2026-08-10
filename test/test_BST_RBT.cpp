@@ -3,7 +3,7 @@
 
 #include "BinarySearchTree.hpp"
 #include "test_helper.hpp"
-// #include "RedBlackTree.hpp"
+#include "RedBlackTree.hpp"
 using namespace std;
 
 void testSmallest() {
@@ -165,8 +165,6 @@ void testInvariant() {
   }
 }
 
-/*
-
 void testRedBlackTrees() {
   {
     RedBlackTree<int> tree;
@@ -210,5 +208,3 @@ void testRedBlackTrees() {
     std::cout << "testRedBlackTrees 2 passed!\n";
   }
 }
-
-*/

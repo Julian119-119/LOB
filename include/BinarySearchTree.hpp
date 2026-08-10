@@ -203,8 +203,12 @@ void BinarySearchTree<T, Compare>::remove(T data) {
         transplant(substituteNode, std::move(substituteNode->right));
     tmp_substituteNode->left = std::move(tar->left);
     tmp_substituteNode->left->parent = tmp_substituteNode.get();
-    tmp_substituteNode->right = std::move(tar->right);
-    tmp_substituteNode->right->parent = tmp_substituteNode.get();
+    /* 如果 substituteNode 為 tar 的 child 且沒有 right child 時，tar 的
+     * right child 會等於 nullptr */
+    if (tar->right) {
+      tmp_substituteNode->right = std::move(tar->right);
+      tmp_substituteNode->right->parent = tmp_substituteNode.get();
+    }
     transplant(tar, std::move(tmp_substituteNode));
   } else if (tar->left) {
     transplant(tar, std::move(tar->left));
@@ -234,7 +238,7 @@ template <typename T, typename Compare>
 void BinarySearchTree<T, Compare>::rotate_right(TreeNode<T>* y) {
   if (!y || !y->left) return;
 
-  TreeNode<T>* substituteNode = y->left;
+  TreeNode<T>* substituteNode = y->left.get();
   std::unique_ptr<TreeNode<T>> tmp_y = transplant(y, std::move(y->left));
   if (substituteNode->right) {
     tmp_y->left = std::move(substituteNode->right);

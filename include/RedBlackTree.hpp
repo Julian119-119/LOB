@@ -109,7 +109,7 @@ void RedBlackTree<T, Compare>::insert_fixup(RBTreeNode<T>* z) {
       } else if /* case 2 */ (zGrandparent->right &&
                               zGrandparent->right->left.get() == z) {
         BinarySearchTree<T, Compare>::rotate_right(z->parent);
-        insert_fixup(static_cast<RBTreeNode<T>>(z->right.get()));
+        insert_fixup(static_cast<RBTreeNode<T>*>(z->right.get()));
       } else /* case 3 */ {
         RBTreeNode<T>::setColor(z->parent, Color::BLACK);
         RBTreeNode<T>::setColor(zGrandparent, Color::RED);
@@ -193,7 +193,7 @@ void RedBlackTree<T, Compare>::remove_fixup(RBTreeNode<T>* x,
 
 template <typename T, typename Compare>
 T* RedBlackTree<T, Compare>::insert(T data) {
-  RBTreeNode* AlloNode = new RBTreeNode<T>(data);
+  RBTreeNode<T>* AlloNode = new RBTreeNode<T>(data);
 
   RBTreeNode<T>* newNode = static_cast<RBTreeNode<T>*>(
       BinarySearchTree<T, Compare>::insert(AlloNode));
@@ -255,52 +255,70 @@ T* RedBlackTree<T, Compare>::insert_emplace(K data, Args&&... args) {
 template <typename T, typename Compare>
 template <typename K>
 void RedBlackTree<T, Compare>::remove(const K& key) {
+  // z 為真正要刪除的節點
   RBTreeNode<T>* z =
       static_cast<RBTreeNode<T>*>(BinarySearchTree<T, Compare>::find_node(key));
   if (!z) return;
 
+  // 更新 leftmost_node_
   if (z == this->leftmost_node_) {
     if (this->leftmost_node_->right) {
-      this->leftmost_node_ = this->leftmost_node_->right;
+      this->leftmost_node_ = this->leftmost_node_->right.get();
       while (this->leftmost_node_->left) {
-        this->leftmost_node_ = this->leftmost_node_->left;
+        this->leftmost_node_ = this->leftmost_node_->left.get();
       }
     } else {
       this->leftmost_node_ = this->leftmost_node_->parent;
     }
   }
 
-  std::shared_ptr<RBTreeNode<T>> y = z;
-  Color y_original_color = RBTreeNode<T>::getColor(y);
-  std::shared_ptr<RBTreeNode<T>> x_parent;
-  std::shared_ptr<RBTreeNode<T>> x;
-  if (!z->left) {
-    x = std::dynamic_pointer_cast<RBTreeNode<T>>(z->right);
-    x_parent = std::dynamic_pointer_cast<RBTreeNode<T>>(z->parent);
-    BinarySearchTree<T, Compare>::transplant(z, z->right);
-  } else if (!z->right) {
-    x = std::dynamic_pointer_cast<RBTreeNode<T>>(z->left);
-    x_parent = std::dynamic_pointer_cast<RBTreeNode<T>>(z->parent);
-    BinarySearchTree<T, Compare>::transplant(z, z->left);
-  } else {
-    y = std::dynamic_pointer_cast<RBTreeNode<T>>(z->right);
+  // y 是指要定替 z 的節點
+  // 此為預設只有 0, 1 個 child 才會用自己做暫時的記號
+  RBTreeNode<T>* y = z;
+  Color y_original_color = RBTreeNode<T>::getColor(y);  // 紀錄 y 的顏色
+  RBTreeNode<T>* x_parent;
+  RBTreeNode<T>* x;
+  if (!z->left) /* 只有 right child 或沒有 child：用唯一的 child 頂替 */ {
+    x = static_cast<RBTreeNode<T>*>(z->right.get());
+    x_parent = static_cast<RBTreeNode<T>*>(z->parent);
+    BinarySearchTree<T, Compare>::transplant(z, std::move(z->right));
+  } else if (!z->right) /* 只有 left child：用唯一的 child 頂替 */ {
+    x = static_cast<RBTreeNode<T>*>(z->left.get());
+    x_parent = static_cast<RBTreeNode<T>*>(z->parent);
+    BinarySearchTree<T, Compare>::transplant(z, std::move(z->left));
+  } else /* 有兩個 child */ {
+    // 將 y 改為真正替換 z 的節點
+    y = static_cast<RBTreeNode<T>*>(z->right.get());
     while (y->left) {
-      y = std::dynamic_pointer_cast<RBTreeNode<T>>(y->left);
+      y = static_cast<RBTreeNode<T>*>(y->left.get());
     }
-    y_original_color = RBTreeNode<T>::getColor(y);
-    x = std::dynamic_pointer_cast<RBTreeNode<T>>(y->right);
-    if (y->parent == z) {
+
+    y_original_color = RBTreeNode<T>::getColor(y);    // 紀錄此時的顏色
+    x = static_cast<RBTreeNode<T>*>(y->right.get());  // x 為 y 的 right child
+    if (y->parent == z) /* y 為 z 的 right child */ {
       x_parent = y;
+      // 開始用 y 頂替 z，並刪除 z
+      RBTreeNode<T>::setColor(y, RBTreeNode<T>::getColor(z));  // 更換 y 的顏色
+      y->left = std::move(z->left);  // 處理 z 的 left subtree
+      if (y->left) y->left->parent = y;
+      BinarySearchTree<T, Compare>::transplant(
+          z, std::move(z->right));  // 將 y 搬到 z 的位置上，並丟掉 z
     } else {
-      x_parent = std::dynamic_pointer_cast<RBTreeNode<T>>(y->parent);
-      BinarySearchTree<T, Compare>::transplant(y, x);
-      y->right = z->right;
-      if (y->right) y->right->parent = y;
+      x_parent = static_cast<RBTreeNode<T>*>(y->parent);
+      // 先將 y 的 right subtree（x） 往上移到 y
+      std::unique_ptr<TreeNode<T>> tmp_y =
+          BinarySearchTree<T, Compare>::transplant(y, std::move(y->right));
+
+      // 開始用 y 頂替掉 z，並刪除 z
+      RBTreeNode<T>::setColor(tmp_y.get(),
+                              RBTreeNode<T>::getColor(z));  // 更換 y 的顏色
+      tmp_y->right = std::move(z->right);  // 處理 z 的 right subtree
+      if (tmp_y->right) tmp_y->right->parent = y;
+      tmp_y->left = std::move(z->left);  // 處理 z 的 left subtree
+      if (tmp_y->left) y->left->parent = y;
+      BinarySearchTree<T, Compare>::transplant(
+          z, std::move(tmp_y));  // 將 y 搬到 z 的位置上，並丟掉 z
     }
-    BinarySearchTree<T, Compare>::transplant(z, y);
-    y->left = z->left;
-    if (y->left) y->left->parent = y;
-    RBTreeNode<T>::setColor(y, RBTreeNode<T>::getColor(z));
   }
 
   if (y_original_color == Color::BLACK) remove_fixup(x, x_parent);
