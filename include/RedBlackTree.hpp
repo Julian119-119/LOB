@@ -2,7 +2,9 @@
 #define __REDBLACKTREE_HPP__
 
 // #include "BinarySearchTree.hpp"
+#include <cstddef>
 #include <functional>
+#include <iterator>
 #include <memory>
 #include <queue>
 #include <sstream>
@@ -65,6 +67,7 @@ class RedBlackTree {
   static Color getColor(Node* node);
   static void setColor(Node* node, Color newcolor);
   void inorder_helper(Node* subroot, std::stringstream& str, bool& isFirst);
+  static Node* successor(Node* node);  // get the next node in in-order
 
  public:
   RedBlackTree<T, Compare>()
@@ -94,13 +97,42 @@ class RedBlackTree {
   Node* find_node(const K& data);
   Node* get_leftmost_node() const { return leftmost_node_; }
   Node* get_rightmost_node() const { return rightmost_node_; }
-  Node* get_successor(Node* node) const;  // get the next node in in-order
 
   /*****************************************************************************
    *  Debug 與 test 用                                                         *
    *****************************************************************************/
   std::string serialization();
   std::string inorder();
+
+  /*****************************************************************************
+   *  iterator                                                                 *
+   *****************************************************************************/
+  struct rbt_iterator {
+    using iterator_category = std::bidirectional_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = T;
+    using pointer = T*;
+    using reference = T&;
+
+    explicit rbt_iterator(Node* ptr) : node_(ptr) {}
+    explicit rbt_iterator() : node_(nullptr) {}
+
+    reference operator*() { return node_->data; }
+    pointer operator->() { return &node_->data; }
+
+    rbt_iterator& operator++() {
+      node_ = successor(node_);
+      return *this;
+    }
+    rbt_iterator operator++(int) {
+      rbt_iterator tmp = *this;
+      ++(*this);
+      return tmp;
+    }
+
+   private:
+    Node* node_;
+  };
 };
 
 /********************************************************************************/
@@ -357,8 +389,8 @@ typename RedBlackTree<T, Compare>::Node* RedBlackTree<T, Compare>::find_node(
 
 template <typename T, typename Compare>
 /* 找尋比自己大的節點中，擁有最小值的 node */
-typename RedBlackTree<T, Compare>::Node*
-RedBlackTree<T, Compare>::get_successor(Node* node) const {
+typename RedBlackTree<T, Compare>::Node* RedBlackTree<T, Compare>::successor(
+    Node* node) {
   if (!node) return nullptr;
 
   Node* curr = node;
