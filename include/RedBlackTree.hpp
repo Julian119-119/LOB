@@ -4,14 +4,15 @@
 // #include "BinarySearchTree.hpp"
 #include <functional>
 #include <memory>
+#include <queue>
 #include <sstream>
 
 enum class Color : uint8_t { RED, BLACK };
 
 template <typename T, typename Compare = std::less<>>
-class RedBlackTree : {
+class RedBlackTree {
  private:
-  struct Node : {
+  struct Node {
     Color color;
     T data;
     Node* parent = nullptr;
@@ -20,13 +21,15 @@ class RedBlackTree : {
 
     template <typename... Args>  // Args ：製作 type T 的參數
     Node(Args&&... args)
-        : data(std::forward<Args>(args)...),
-          color(Color::RED),
+        : color(Color::RED),
+          data(std::forward<Args>(args)...),
           parent(nullptr) {}
-    Node(Args&&... args, Color c)
-        : data(std::forward<Args>(args)...), color(c), parent(nullptr) {}
-    Node(Args&&... args, Color c, Node* p)
-        : data(std::forward<Args>(args)...), color(c), parent(p) {}
+    template <typename... Args>
+    Node(Color c, Args&&... args)
+        : color(c), data(std::forward<Args>(args)...), parent(nullptr) {}
+    template <typename... Args>
+    Node(Color c, Node* p, Args&&... args)
+        : color(c), data(std::forward<Args>(args)...), parent(p) {}
     ~Node() = default;
   };
 
@@ -61,8 +64,6 @@ class RedBlackTree : {
   static Color getColor(Node* node);
   static void setColor(Node* node, Color newcolor);
   void inorder_helper(Node* subroot, std::stringstream& str, bool& isFirst);
-  /* static std::unique_ptr<Node> makeRBTreeNode(std::string& s, Node* p =
-   * nullptr); */
 
  public:
   RedBlackTree<T, Compare>() : leftmost_node_(nullptr){};
@@ -76,10 +77,11 @@ class RedBlackTree : {
   T* insert(T data); /* 一般插入 */
   // 有相同的 data 回傳舊的 data，否則回傳新的 data 的 address
 
-  // K 為用於與 T 比較的的 type
-  // Args 為用來製造出 T 的參數
   template <typename K, typename... Args>
+  // K 為用於與 T 比較的的 type，Args 為用來製造出 T 的參數
   T* insert_emplace(K data, Args&&... args); /* 異構插入 */
+  // 有相同的 data 則回傳就的 data 的 address，否則回傳新的
+
   template <typename K>
   void remove(const K& key); /* 異構刪除 */
 
@@ -90,6 +92,11 @@ class RedBlackTree : {
   Node* find_node(const K& data);
   Node* get_leftmost_node() const { return leftmost_node_; }
   Node* get_successor(Node* node) const;  // get the next node in in-order
+
+  /*****************************************************************************
+   *  Debug 與 test 用                                                         *
+   *****************************************************************************/
+  std::string serialization();
   std::string inorder();
 };
 
@@ -99,17 +106,22 @@ template <typename T, typename Compare>
 void RedBlackTree<T, Compare>::inorder_helper(Node* subroot,
                                               std::stringstream& str,
                                               bool& isFirst) {
-  if (!subroot)
-    return;
-  else {
-    inorder_helper(subroot->left.get(), str, isFirst);
-    if (isFirst) {
-      isFirst = false;
-      str << subroot->data;
-    } else
-      str << ' ' << subroot->data;
-    inorder_helper(subroot->right.get(), str, isFirst);
+  if (!subroot) return;
+
+  inorder_helper(subroot->left.get(), str, isFirst);
+  if (isFirst) {
+    isFirst = false;
+    str << subroot->data;
+  } else {
+    str << ' ' << subroot->data;
   }
+
+  if (subroot->color == Color::RED) {
+    str << "(R)";
+  } else {
+    str << "(B)";
+  }
+  inorder_helper(subroot->right.get(), str, isFirst);
 }
 
 template <typename T, typename Compare>
@@ -134,24 +146,8 @@ Color RedBlackTree<T, Compare>::getColor(Node* node) {
   if (!node)
     return Color::BLACK;
   else
-    return node_rbt->color;
+    return node->color;
 }
-
-/*
-template <typename T, typename Compare>
-std::unique_ptr<Node> RedBlackTree<T, Compare>::makeRBTreeNode(std::string& s,
-                                                               Node* p) {
-  if (s == "#") {
-    return nullptr;
-  } else if (s[0] == '(') {
-    s.pop_back();
-    s[0] = ' ';
-    return std::make_unique<RBTreeNode<T>>(stoi(s), Color::RED, p);
-  } else {
-    return std::make_unique<RBTreeNode<T>>(stoi(s), Color::BLACK, p);
-  }
-}
-*/
 
 template <typename T, typename Compare>
 void RedBlackTree<T, Compare>::rotate_left(Node* x) {
@@ -196,7 +192,7 @@ void RedBlackTree<T, Compare>::insert_fixup(Node* z) {
     return;
   }
   if (getColor(z) == Color::RED && getColor(z->parent) == Color::RED) {
-    auto zGrandparent = z->parent->parent;
+    Node* zGrandparent = z->parent->parent;
     if (zGrandparent->left.get() == z->parent) /* Left */ {
       auto zUncle = zGrandparent->right.get();
       if (getColor(zUncle) == Color::RED) /* uncle is red */ {
@@ -241,7 +237,7 @@ void RedBlackTree<T, Compare>::insert_fixup(Node* z) {
 
 template <typename T, typename Compare>
 void RedBlackTree<T, Compare>::remove_fixup(Node* x, Node* parent) {
-  Node<T>* w;
+  Node* w;
   while (x != root_.get() && getColor(x) == Color::BLACK) {
     if (x == parent->left.get()) {
       w = parent->right.get();
@@ -261,7 +257,7 @@ void RedBlackTree<T, Compare>::remove_fixup(Node* x, Node* parent) {
           setColor(w->left.get(), Color::BLACK);
           setColor(w, Color::RED);
           rotate_right(w);
-          w = static_cast<RBTreeNode<T>*>(parent->right.get());
+          w = parent->right.get();
         }
 
         setColor(w, getColor(parent));
@@ -273,12 +269,12 @@ void RedBlackTree<T, Compare>::remove_fixup(Node* x, Node* parent) {
         x = root_.get();
       }
     } else {
-      w = static_cast<RBTreeNode<T>*>(parent->left.get());
+      w = parent->left.get();
       if (getColor(w) == Color::RED) {
         setColor(w, Color::BLACK);
         setColor(parent, Color::RED);
         rotate_right(parent);
-        w = static_cast<RBTreeNode<T>*>(parent->left.get());
+        w = parent->left.get();
       } else if (getColor(w->left.get()) == Color::BLACK &&
                  getColor(w->right.get()) == Color::BLACK) {
         setColor(w, Color::RED);
@@ -376,8 +372,10 @@ RedBlackTree<T, Compare>::get_successor(Node* node) const {
 template <typename T, typename Compare>
 T* RedBlackTree<T, Compare>::insert(T data) {
   if (!root_) {
-    Node* node = new Node(data) root_.reset(node);
-    setColor(node, Color::BLACK) leftmost_node_ = node;
+    Node* node = new Node(data);
+    root_.reset(node);
+    setColor(node, Color::BLACK);
+    leftmost_node_ = node;
     return &node->data;
   }
 
@@ -385,12 +383,12 @@ T* RedBlackTree<T, Compare>::insert(T data) {
   Node* node = nullptr;
   Node* parent = root_.get();
   while (parent) {
-    if (comp(node->data, parent->data)) {
+    if (comp(data, parent->data)) {
       if (parent->left) {
         parent = parent->left.get();
       } else {
         node = new Node(data);
-        parent->left = std::move(node);
+        parent->left.reset(node);
         node->parent = parent;
         // 檢查是否是插入在最小的節點的左側
         if (parent == leftmost_node_) {
@@ -398,12 +396,12 @@ T* RedBlackTree<T, Compare>::insert(T data) {
         }
         break;
       }
-    } else if (comp(parent->data, node->data)) {
+    } else if (comp(parent->data, data)) {
       if (parent->right) {
         parent = parent->right.get();
       } else {
         node = new Node(data);
-        parent->right = std::move(node);
+        parent->right.reset(node);
         node->parent = parent;
         break;
       }
@@ -421,9 +419,9 @@ template <typename K, typename... Args>
 T* RedBlackTree<T, Compare>::insert_emplace(K data, Args&&... args) {
   if (!root_) {
     T new_value(std::forward<Args>(args)...);
-    Node* node = new Node(new_value, Color::BLACK);
+    Node* node = new Node(Color::BLACK, new_value);
     leftmost_node_ = node;
-    root_ = std::move(node);
+    root_.reset(node);
     return &node->data;
   }
 
@@ -438,7 +436,7 @@ T* RedBlackTree<T, Compare>::insert_emplace(K data, Args&&... args) {
         T new_value(std::forward<Args>(args)...);
         Node* node = new Node(new_value);
 
-        parent->left = std::move(node);
+        parent->left.reset(node);
         node->parent = parent;
 
         // 檢查是否是插入在最小的節點的左側
@@ -454,7 +452,7 @@ T* RedBlackTree<T, Compare>::insert_emplace(K data, Args&&... args) {
       } else {
         T new_value(std::forward<Args>(args)...);
         Node* node = new Node(new_value);
-        parent->right = std::move(node);
+        parent->right.reset(node);
         node->parent = parent;
         insert_fixup(node);
         return &node->data;
@@ -518,7 +516,7 @@ void RedBlackTree<T, Compare>::remove(const K& key) {
       if (y->left) y->left->parent = y;
       transplant(z, std::move(z->right));  // 將 y 搬到 z 的位置上，並丟掉 z
     } else {
-      x_parent = static_cast<RBTreeNode<T>*>(y->parent);
+      x_parent = y->parent;
       // 先將 y 的 right subtree（x） 往上移到 y
       std::unique_ptr<Node> tmp_y = transplant(y, std::move(y->right));
 
@@ -533,6 +531,46 @@ void RedBlackTree<T, Compare>::remove(const K& key) {
   }
 
   if (y_original_color == Color::BLACK) remove_fixup(x, x_parent);
+}
+
+template <typename T, typename Compare>
+std::string RedBlackTree<T, Compare>::serialization() {
+  if (!root_) return "#";
+
+  std::queue<Node*> q;
+  q.push(root_.get());
+  int non_null_node = 1;
+  int curr_level = 0;
+  std::stringstream ss;
+  while (non_null_node) {
+    int level_size = q.size();
+    ss << 'L' << curr_level << ": ";
+    while (level_size--) {
+      Node* node = q.front();
+      q.pop();
+      if (node) {
+        non_null_node--;
+        ss << node->data;
+        if (node->color == Color::RED) {
+          ss << "(R) ";
+        } else {
+          ss << "(B) ";
+        }
+        q.push(node->left.get());
+        q.push(node->right.get());
+        if (node->left) non_null_node++;
+        if (node->right) non_null_node++;
+      } else {
+        ss << "#    ";
+        q.push(nullptr);  // 為了保持印出來的圖是完整的，必須遇到 null 時
+        q.push(nullptr);  // 將他的 LC, RC 的 nullptr push 進去
+      }
+    }
+    ss << '\n';
+    curr_level++;
+  }
+
+  return ss.str();
 }
 
 #endif

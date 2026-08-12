@@ -73,25 +73,25 @@ bool LOB::has_order(uint32_t order_idx) const {
 uint64_t LOB::get_volume_at_price(double tar_price, Side tar_side) const {
   /* 買方 */
   if (tar_side == Side::BUY) {
-    auto lt = buyer_tree.get_leftmost_node();
-    while (lt && lt->data.price != tar_price) {
-      lt = buyer_tree.get_successor(lt);
+    auto it = buyer_tree.get_leftmost_node();
+    while (it && it->data.price != tar_price) {
+      it = buyer_tree.get_successor(it);
     }
 
-    if (!lt)
+    if (!it)
       return VOLUME_NO_VALUE;
     else
-      return lt->data.total_volume;
+      return it->data.total_volume;
   } else /* 賣方 */ {
-    auto lt = seller_tree.get_leftmost_node();
-    while (lt && lt->data.price != tar_price) {
-      lt = seller_tree.get_successor(lt);
+    auto it = seller_tree.get_leftmost_node();
+    while (it && it->data.price != tar_price) {
+      it = seller_tree.get_successor(it);
     }
 
-    if (!lt)
+    if (!it)
       return VOLUME_NO_VALUE;
     else
-      return lt->data.total_volume;
+      return it->data.total_volume;
   }
 }
 
@@ -100,16 +100,16 @@ std::vector<PriceLevelInfo> LOB::get_top_k_info(size_t k, Side side) {
   info.reserve(k);
 
   if (side == Side::BUY) /* 買方 */ {
-    auto lt = buyer_tree.get_leftmost_node();
-    for (size_t i = 0; lt && i < k; i++) {
-      info.emplace_back(lt->data.getprice(), lt->data.get_total_volume());
-      lt = buyer_tree.get_successor(lt);
+    auto it = buyer_tree.get_leftmost_node();
+    for (size_t i = 0; it && i < k; i++) {
+      info.emplace_back(it->data.getprice(), it->data.get_total_volume());
+      it = buyer_tree.get_successor(it);
     }
   } else /* 賣方 */ {
-    auto lt = seller_tree.get_leftmost_node();
-    for (size_t i = 0; lt && i < k; i++) {
-      info.emplace_back(lt->data.getprice(), lt->data.get_total_volume());
-      lt = seller_tree.get_successor(lt);
+    auto it = seller_tree.get_leftmost_node();
+    for (size_t i = 0; it && i < k; i++) {
+      info.emplace_back(it->data.getprice(), it->data.get_total_volume());
+      it = seller_tree.get_successor(it);
     }
   }
 
