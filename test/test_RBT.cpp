@@ -13,152 +13,180 @@ void test_insert_search() {
     assert(!tree.find_node(50));   // 測試空的 find
     assert(tree.empty() == true);  // 測試 empty()
 
-    auto int_it = tree.insert(7);
+    auto int_ptr = tree.insert(7);
     assert(tree.find_node(7)->data == 7);
     assert(tree.get_leftmost_node()->data == 7);
+    assert(tree.get_rightmost_node()->data == 7);
     assert(tree.empty() == false);
-    assert(*int_it == 7);  // 測試回傳值
+    assert(*int_ptr == 7);  // 測試回傳值
 
-    int_it = tree.insert(12);
+    int_ptr = tree.insert(12);
     assert(tree.find_node(12)->data == 12);
     assert(tree.get_leftmost_node()->data == 7);
+    assert(tree.get_rightmost_node()->data == 12);
     assert(tree.empty() == false);
-    assert(*int_it == 12);
+    assert(*int_ptr == 12);
 
-    int_it = tree.insert(3);
+    int_ptr = tree.insert(3);
     assert(tree.find_node(3)->data == 3);
     assert(tree.get_leftmost_node()->data == 3);
+    assert(tree.get_rightmost_node()->data == 12);
     assert(tree.empty() == false);
-    assert(*int_it == 3);
+    assert(*int_ptr == 3);
 
     tree.insert(6);
     assert(tree.find_node(6)->data == 6);
     assert(tree.get_leftmost_node()->data == 3);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.insert(11);
     assert(tree.find_node(11)->data == 11);
     assert(tree.get_leftmost_node()->data == 3);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.insert(10);
     assert(tree.find_node(10)->data == 10);
     assert(tree.get_leftmost_node()->data == 3);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.insert(1);
     assert(tree.find_node(1)->data == 1);
     assert(tree.get_leftmost_node()->data == 1);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.insert(4);
     assert(tree.find_node(4)->data == 4);
     assert(tree.get_leftmost_node()->data == 1);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.insert(4);  // 放入重複的數字
     auto it = tree.get_leftmost_node();
-    int node_num = 0; 
-    while(it) {
+    int node_num = 0;
+    while (it) {
       node_num++;
       it = tree.get_successor(it);
     }
-    assert(node_num == 8); // 測試重複的數字是否有被放進去
+    assert(node_num == 8);  // 測試重複的數字是否有被放進去
   }
 
   /* 由小到大插入 */
   {
     RedBlackTree<int> tree;
-    auto it = tree.insert(10);
+    auto int_ptr = tree.insert(10);
     assert(tree.find_node(10)->data == 10);
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 10);
     assert(tree.empty() == false);
-    assert(*it == 10);
+    assert(*int_ptr == 10);
 
-    it = tree.insert(23);
+    int_ptr = tree.insert(23);
     assert(tree.find_node(23)->data == 23);
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 23);
     assert(tree.empty() == false);
-    assert(*it == 23);
+    assert(*int_ptr == 23);
 
-    it = tree.insert(35);
+    int_ptr = tree.insert(35);
     assert(tree.find_node(35)->data == 35);
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 35);
     assert(tree.empty() == false);
-    assert(*it == 35);
+    assert(*int_ptr == 35);
 
     tree.insert(42);
     assert(tree.find_node(42)->data == 42);
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 42);
 
     tree.insert(53);
     assert(tree.find_node(53)->data == 53);
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 53);
 
     tree.insert(64);
     assert(tree.find_node(64)->data == 64);
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 64);
 
     tree.insert(75);
     assert(tree.find_node(75)->data == 75);
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 75);
 
     tree.insert(86);
     assert(tree.find_node(86)->data == 86);
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 86);
 
     tree.insert(94);
     assert(tree.find_node(94)->data == 94);
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 94);
 
     tree.insert(103);
     assert(tree.find_node(103)->data == 103);
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 103);
   }
 
   /* 由大到小插入 */
   {
     RedBlackTree<int> tree;
-    auto it = tree.insert(103);
+    auto int_ptr = tree.insert(103);
     assert(tree.find_node(103)->data == 103);
     assert(tree.get_leftmost_node()->data == 103);
+    assert(tree.get_rightmost_node()->data == 103);
     assert(tree.empty() == false);
-    assert(*it == 103);
+    assert(*int_ptr == 103);
 
-    it = tree.insert(94);
+    int_ptr = tree.insert(94);
     assert(tree.find_node(94)->data == 94);
     assert(tree.get_leftmost_node()->data == 94);
+    assert(tree.get_rightmost_node()->data == 103);
     assert(tree.empty() == false);
-    assert(*it == 94);
+    assert(*int_ptr == 94);
 
-    it = tree.insert(86);
+    int_ptr = tree.insert(86);
     assert(tree.find_node(86)->data == 86);
     assert(tree.get_leftmost_node()->data == 86);
+    assert(tree.get_rightmost_node()->data == 103);
     assert(tree.empty() == false);
-    assert(*it == 86);
+    assert(*int_ptr == 86);
 
     tree.insert(75);
     assert(tree.find_node(75)->data == 75);
     assert(tree.get_leftmost_node()->data == 75);
+    assert(tree.get_rightmost_node()->data == 103);
 
     tree.insert(64);
     assert(tree.find_node(64)->data == 64);
     assert(tree.get_leftmost_node()->data == 64);
+    assert(tree.get_rightmost_node()->data == 103);
 
     tree.insert(53);
     assert(tree.find_node(53)->data == 53);
     assert(tree.get_leftmost_node()->data == 53);
+    assert(tree.get_rightmost_node()->data == 103);
 
     tree.insert(42);
     assert(tree.find_node(42)->data == 42);
     assert(tree.get_leftmost_node()->data == 42);
+    assert(tree.get_rightmost_node()->data == 103);
 
     tree.insert(35);
     assert(tree.find_node(35)->data == 35);
     assert(tree.get_leftmost_node()->data == 35);
+    assert(tree.get_rightmost_node()->data == 103);
 
     tree.insert(23);
     assert(tree.find_node(23)->data == 23);
     assert(tree.get_leftmost_node()->data == 23);
+    assert(tree.get_rightmost_node()->data == 103);
 
     tree.insert(10);
     assert(tree.find_node(10)->data == 10);
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 103);
   }
 
   /* 測試放入 greater<int>() */
@@ -168,45 +196,60 @@ void test_insert_search() {
     assert(!tree.find_node(50));   // 測試空的 find
     assert(tree.empty() == true);  // 測試 empty()
 
-    auto it = tree.insert(7);
+    auto int_ptr = tree.insert(7);
     assert(tree.find_node(7)->data == 7);
     assert(tree.get_leftmost_node()->data == 7);
+    assert(tree.get_rightmost_node()->data == 7);
     assert(tree.empty() == false);
-    assert(*it == 7);
+    assert(*int_ptr == 7);
 
-    it = tree.insert(3);
+    int_ptr = tree.insert(3);
     assert(tree.find_node(3)->data == 3);
     assert(tree.get_leftmost_node()->data == 7);
+    assert(tree.get_rightmost_node()->data == 3);
     assert(tree.empty() == false);
-    assert(*it == 3);
+    assert(*int_ptr == 3);
 
-    it = tree.insert(6);
+    int_ptr = tree.insert(6);
     assert(tree.find_node(6)->data == 6);
     assert(tree.get_leftmost_node()->data == 7);
+    assert(tree.get_rightmost_node()->data == 3);
     assert(tree.empty() == false);
-    assert(*it == 6);
+    assert(*int_ptr == 6);
 
     tree.insert(11);
     assert(tree.find_node(11)->data == 11);
     assert(tree.get_leftmost_node()->data == 11);
+    assert(tree.get_rightmost_node()->data == 3);
 
     tree.insert(10);
     assert(tree.find_node(10)->data == 10);
     assert(tree.get_leftmost_node()->data == 11);
+    assert(tree.get_rightmost_node()->data == 3);
 
     tree.insert(12);
     assert(tree.find_node(12)->data == 12);
     assert(tree.get_leftmost_node()->data == 12);
+    assert(tree.get_rightmost_node()->data == 3);
 
     tree.insert(1);
     assert(tree.find_node(1)->data == 1);
     assert(tree.get_leftmost_node()->data == 12);
+    assert(tree.get_rightmost_node()->data == 1);
 
     tree.insert(4);
     assert(tree.find_node(4)->data == 4);
     assert(tree.get_leftmost_node()->data == 12);
+    assert(tree.get_rightmost_node()->data == 1);
 
     tree.insert(4);  // 測試重複的數字
+    auto it = tree.get_leftmost_node();
+    int node_num = 0;
+    while (it) {
+      node_num++;
+      it = tree.get_successor(it);
+    }
+    assert(node_num == 8);  // 測試重複的數字是否有被放進去
 
     cout << "test_insert_search passed!\n" << flush;
   }
@@ -228,42 +271,52 @@ void test_remove() {
     tree.insert(1);
     tree.insert(4);
     assert(tree.get_leftmost_node()->data == 1);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.remove(165);  // 測試刪除不存在的數字
     assert(!tree.find_node(165));
     assert(tree.get_leftmost_node()->data == 1);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.remove(6);  // 刪除中間數
     assert(!tree.find_node(6));
     assert(tree.get_leftmost_node()->data == 1);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.remove(12);  // 刪除最大數字
     assert(!tree.find_node(12));
     assert(tree.get_leftmost_node()->data == 1);
+    assert(tree.get_rightmost_node()->data == 11);
 
     tree.remove(1);  // 刪除最小數字
     assert(!tree.find_node(1));
     assert(tree.get_leftmost_node()->data == 3);
+    assert(tree.get_rightmost_node()->data == 11);
 
     tree.remove(3);
     assert(!tree.find_node(3));
     assert(tree.get_leftmost_node()->data == 4);
+    assert(tree.get_rightmost_node()->data == 11);
 
     tree.remove(4);
     assert(!tree.find_node(4));
     assert(tree.get_leftmost_node()->data == 7);
+    assert(tree.get_rightmost_node()->data == 11);
 
     tree.remove(10);
     assert(!tree.find_node(10));
     assert(tree.get_leftmost_node()->data == 7);
+    assert(tree.get_rightmost_node()->data == 11);
 
     tree.remove(11);
     assert(!tree.find_node(11));
     assert(tree.get_leftmost_node()->data == 7);
+    assert(tree.get_rightmost_node()->data == 7);
 
     tree.remove(7);
     assert(!tree.find_node(7));
     assert(!tree.get_leftmost_node());
+    assert(!tree.get_rightmost_node());
     assert(tree.empty() == true);  // 測試樹是否為空
   }
 
@@ -279,38 +332,47 @@ void test_remove() {
     tree.insert(1);
     tree.insert(4);
     assert(tree.get_leftmost_node()->data == 1);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.remove(1);
     assert(!tree.find_node(1));
     assert(tree.get_leftmost_node()->data == 3);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.remove(3);
     assert(!tree.find_node(3));
     assert(tree.get_leftmost_node()->data == 4);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.remove(4);
     assert(!tree.find_node(4));
     assert(tree.get_leftmost_node()->data == 6);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.remove(6);
     assert(!tree.find_node(6));
     assert(tree.get_leftmost_node()->data == 7);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.remove(7);
     assert(!tree.find_node(7));
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.remove(10);
     assert(!tree.find_node(10));
     assert(tree.get_leftmost_node()->data == 11);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.remove(11);
     assert(!tree.find_node(11));
     assert(tree.get_leftmost_node()->data == 12);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.remove(12);
     assert(!tree.find_node(12));
     assert(tree.get_leftmost_node() == nullptr);
+    assert(tree.get_rightmost_node() == nullptr);
     assert(tree.empty() == true);  // 測試樹是否為空
   }
 
@@ -326,38 +388,47 @@ void test_remove() {
     tree.insert(1);
     tree.insert(4);
     assert(tree.get_leftmost_node()->data == 1);
+    assert(tree.get_rightmost_node()->data == 12);
 
     tree.remove(12);
     assert(!tree.find_node(12));
     assert(tree.get_leftmost_node()->data == 1);
+    assert(tree.get_rightmost_node()->data == 11);
 
     tree.remove(11);
     assert(!tree.find_node(11));
     assert(tree.get_leftmost_node()->data == 1);
+    assert(tree.get_rightmost_node()->data == 10);
 
     tree.remove(10);
     assert(!tree.find_node(10));
     assert(tree.get_leftmost_node()->data == 1);
+    assert(tree.get_rightmost_node()->data == 7);
 
     tree.remove(7);
     assert(!tree.find_node(7));
     assert(tree.get_leftmost_node()->data == 1);
+    assert(tree.get_rightmost_node()->data == 6);
 
     tree.remove(6);
     assert(!tree.find_node(6));
     assert(tree.get_leftmost_node()->data == 1);
+    assert(tree.get_rightmost_node()->data == 4);
 
     tree.remove(4);
     assert(!tree.find_node(4));
     assert(tree.get_leftmost_node()->data == 1);
+    assert(tree.get_rightmost_node()->data == 3);
 
     tree.remove(3);
     assert(!tree.find_node(3));
     assert(tree.get_leftmost_node()->data == 1);
+    assert(tree.get_rightmost_node()->data == 1);
 
     tree.remove(1);
     assert(!tree.find_node(1));
     assert(tree.get_leftmost_node() == nullptr);
+    assert(tree.get_rightmost_node() == nullptr);
     assert(tree.empty() == true);  // 測試樹是否為空
   }
 
@@ -379,38 +450,47 @@ void test_remove() {
     tree.remove(165);  // 測試刪除不存在的數字
     assert(!tree.find_node(165));
     assert(tree.get_leftmost_node()->data == 12);
+    assert(tree.get_rightmost_node()->data == 1);
 
     tree.remove(6);  // 刪除中間數
     assert(!tree.find_node(6));
     assert(tree.get_leftmost_node()->data == 12);
+    assert(tree.get_rightmost_node()->data == 1);
 
     tree.remove(12);  // 刪除最大數字
     assert(!tree.find_node(12));
     assert(tree.get_leftmost_node()->data == 11);
+    assert(tree.get_rightmost_node()->data == 1);
 
     tree.remove(1);  // 刪除最小數字
     assert(!tree.find_node(1));
     assert(tree.get_leftmost_node()->data == 11);
+    assert(tree.get_rightmost_node()->data == 3);
 
     tree.remove(11);
     assert(!tree.find_node(11));
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 3);
 
     tree.remove(4);
     assert(!tree.find_node(4));
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 3);
 
     tree.remove(3);
     assert(!tree.find_node(3));
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 7);
 
     tree.remove(7);
     assert(!tree.find_node(7));
     assert(tree.get_leftmost_node()->data == 10);
+    assert(tree.get_rightmost_node()->data == 10);
 
     tree.remove(10);
     assert(!tree.find_node(10));
     assert(!tree.get_leftmost_node());
+    assert(!tree.get_rightmost_node());
     assert(tree.empty() == true);  // 測試樹是否為空
 
     cout << "test_remove passed!\n" << flush;
@@ -460,39 +540,45 @@ void test_insert_emplace() {
   {
     RedBlackTree<Price_level, Comp> tree;
 
-    /* 插入 ID = 1111，price = 10 的 Price_level */
+    /* 插入 ID = 1111，price = 60 的 Price_level */
     auto it = tree.insert_emplace(60, 1111, 60);
     assert(it && it->id == 1111 && it->price == 60);
 
     // 測試異構查詢
     assert(tree.find_node(60)->data.id == 1111);
     assert(tree.get_leftmost_node()->data.id == 1111);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     /* 測試插入相同的 price */
     it = tree.insert_emplace(60, 2222, 60);
     assert(it && it->id == 1111);
     assert(tree.find_node(60)->data.id == 1111);
     assert(tree.get_leftmost_node()->data.id == 1111);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     it = tree.insert_emplace(50, 5, 50);
     assert(it && it->id == 5 && it->price == 50);
     assert(tree.find_node(50)->data.id == 5);
     assert(tree.get_leftmost_node()->data.id == 5);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     it = tree.insert_emplace(20, 222, 20);
     assert(it && it->id == 222 && it->price == 20);
     assert(tree.find_node(20)->data.id == 222);
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     it = tree.insert_emplace(40, 44, 40);
     assert(it && it->id == 44 && it->price == 40);
     assert(tree.find_node(40)->data.id == 44);
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     it = tree.insert_emplace(30, 333, 30);
     assert(it && it->id == 333 && it->price == 30);
     assert(tree.find_node(30)->data.id == 333);
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 1111);
   }
 
   /* 比較 price 且小到大插入 */
@@ -503,26 +589,31 @@ void test_insert_emplace() {
     assert(it && it->id == 222 && it->price == 20);
     assert(tree.find_node(20)->data.id == 222);
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 222);
 
     it = tree.insert_emplace(30, 333, 30);
     assert(it && it->id == 333 && it->price == 30);
     assert(tree.find_node(30)->data.id == 333);
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 333);
 
     it = tree.insert_emplace(40, 44, 40);
     assert(it && it->id == 44 && it->price == 40);
     assert(tree.find_node(40)->data.id == 44);
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 44);
 
     it = tree.insert_emplace(50, 5, 50);
     assert(it && it->id == 5 && it->price == 50);
     assert(tree.find_node(50)->data.id == 5);
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 5);
 
     it = tree.insert_emplace(60, 1111, 60);
     assert(it && it->id == 1111 && it->price == 60);
     assert(tree.find_node(60)->data.id == 1111);
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 1111);
   }
 
   /* 比較 price 且由大到小插入*/
@@ -533,26 +624,31 @@ void test_insert_emplace() {
     assert(it && it->id == 1111 && it->price == 60);
     assert(tree.find_node(60)->data.id == 1111);
     assert(tree.get_leftmost_node()->data.id == 1111);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     it = tree.insert_emplace(50, 5, 50);
     assert(it && it->id == 5 && it->price == 50);
     assert(tree.find_node(50)->data.id == 5);
     assert(tree.get_leftmost_node()->data.id == 5);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     it = tree.insert_emplace(40, 44, 40);
     assert(it && it->id == 44 && it->price == 40);
     assert(tree.find_node(40)->data.id == 44);
     assert(tree.get_leftmost_node()->data.id == 44);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     it = tree.insert_emplace(30, 333, 30);
     assert(it && it->id == 333 && it->price == 30);
     assert(tree.find_node(30)->data.id == 333);
     assert(tree.get_leftmost_node()->data.id == 333);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     it = tree.insert_emplace(20, 222, 20);
     assert(it && it->id == 222 && it->price == 20);
     assert(tree.find_node(20)->data.id == 222);
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     cout << "test_insert_emplace passed!\n" << flush;
   }
@@ -572,22 +668,27 @@ void test_heterogeneous_remove() {
     tree.remove(30);
     assert(!tree.find_node(30));
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     tree.remove(50);
     assert(!tree.find_node(50));
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     tree.remove(60);
     assert(!tree.find_node(60));
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 44);
 
     tree.remove(40);
     assert(!tree.find_node(40));
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 222);
 
     tree.remove(20);
     assert(!tree.find_node(20));
     assert(!tree.get_leftmost_node());
+    assert(!tree.get_rightmost_node());
 
     assert(tree.empty());
   }
@@ -605,22 +706,27 @@ void test_heterogeneous_remove() {
     tree.remove(20);
     assert(!tree.find_node(20));
     assert(tree.get_leftmost_node()->data.id == 333);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     tree.remove(30);
     assert(!tree.find_node(30));
     assert(tree.get_leftmost_node()->data.id == 44);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     tree.remove(40);
     assert(!tree.find_node(40));
     assert(tree.get_leftmost_node()->data.id == 5);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     tree.remove(50);
     assert(!tree.find_node(50));
     assert(tree.get_leftmost_node()->data.id == 1111);
+    assert(tree.get_rightmost_node()->data.id == 1111);
 
     tree.remove(60);
     assert(!tree.find_node(60));
     assert(!tree.get_leftmost_node());
+    assert(!tree.get_rightmost_node());
 
     assert(tree.empty());
   }
@@ -638,22 +744,27 @@ void test_heterogeneous_remove() {
     tree.remove(60);
     assert(!tree.find_node(60));
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 5);
 
     tree.remove(50);
     assert(!tree.find_node(50));
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 44);
 
     tree.remove(40);
     assert(!tree.find_node(40));
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 333);
 
     tree.remove(30);
     assert(!tree.find_node(30));
     assert(tree.get_leftmost_node()->data.id == 222);
+    assert(tree.get_rightmost_node()->data.id == 222);
 
     tree.remove(20);
     assert(!tree.find_node(20));
     assert(!tree.get_leftmost_node());
+    assert(!tree.get_rightmost_node());
 
     assert(tree.empty());
 

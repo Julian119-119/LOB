@@ -38,6 +38,7 @@ class RedBlackTree {
    *****************************************************************************/
   std::unique_ptr<Node> root_;
   Node* leftmost_node_;
+  Node* rightmost_node_;
 
   /*****************************************************************************
    *  transplant                                                               *
@@ -66,7 +67,8 @@ class RedBlackTree {
   void inorder_helper(Node* subroot, std::stringstream& str, bool& isFirst);
 
  public:
-  RedBlackTree<T, Compare>() : leftmost_node_(nullptr){};
+  RedBlackTree<T, Compare>()
+      : leftmost_node_(nullptr), rightmost_node_(nullptr){};
 
   bool empty() const { return root_ == nullptr; } /* tree 是否為空 */
 
@@ -91,6 +93,7 @@ class RedBlackTree {
   template <typename K>
   Node* find_node(const K& data);
   Node* get_leftmost_node() const { return leftmost_node_; }
+  Node* get_rightmost_node() const { return rightmost_node_; }
   Node* get_successor(Node* node) const;  // get the next node in in-order
 
   /*****************************************************************************
@@ -327,11 +330,15 @@ template <typename K>
 /* find_node: herogeneously find */
 typename RedBlackTree<T, Compare>::Node* RedBlackTree<T, Compare>::find_node(
     const K& key) {
-  // 確保 O(1) 時間內可以找到最小的 node
+  // 確保 O(1) 時間內可以找到最小與最大的 node
   Compare comp;
   if (leftmost_node_ &&
       (!comp(leftmost_node_->data, key) && !comp(key, leftmost_node_->data))) {
     return leftmost_node_;
+  }
+  if (rightmost_node_ && (!comp(rightmost_node_->data, key) &&
+                          !comp(key, rightmost_node_->data))) {
+    return rightmost_node_;
   }
 
   Node* node = root_.get();
@@ -376,6 +383,7 @@ T* RedBlackTree<T, Compare>::insert(T data) {
     root_.reset(node);
     setColor(node, Color::BLACK);
     leftmost_node_ = node;
+    rightmost_node_ = node;
     return &node->data;
   }
 
@@ -403,6 +411,10 @@ T* RedBlackTree<T, Compare>::insert(T data) {
         node = new Node(data);
         parent->right.reset(node);
         node->parent = parent;
+        //  檢查是否插入在最大節點的右側
+        if (parent == rightmost_node_) {
+          rightmost_node_ = node;
+        }
         break;
       }
     } else {
@@ -421,6 +433,7 @@ T* RedBlackTree<T, Compare>::insert_emplace(K data, Args&&... args) {
     T new_value(std::forward<Args>(args)...);
     Node* node = new Node(Color::BLACK, new_value);
     leftmost_node_ = node;
+    rightmost_node_ = node;
     root_.reset(node);
     return &node->data;
   }
@@ -454,6 +467,11 @@ T* RedBlackTree<T, Compare>::insert_emplace(K data, Args&&... args) {
         Node* node = new Node(new_value);
         parent->right.reset(node);
         node->parent = parent;
+
+        // 檢查是否是插入在最大節點的右側
+        if (parent == rightmost_node_) {
+          rightmost_node_ = node;
+        }
         insert_fixup(node);
         return &node->data;
       }
@@ -470,7 +488,7 @@ template <typename K>
 void RedBlackTree<T, Compare>::remove(const K& key) {
   // z 為真正要刪除的節點
   Node* z = find_node(key);
-  if (!z) return;
+  if (!z || !root_) return;
 
   // 更新 leftmost_node_
   if (z == leftmost_node_) {
@@ -481,6 +499,18 @@ void RedBlackTree<T, Compare>::remove(const K& key) {
       }
     } else {
       leftmost_node_ = leftmost_node_->parent;
+    }
+  }
+
+  // 更新 rightmost_node_
+  if (z == rightmost_node_) {
+    if (rightmost_node_->left) {
+      rightmost_node_ = rightmost_node_->left.get();
+      while (rightmost_node_->right) {
+        rightmost_node_ = rightmost_node_->right.get();
+      }
+    } else {
+      rightmost_node_ = rightmost_node_->parent;
     }
   }
 
