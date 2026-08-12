@@ -13,23 +13,23 @@ void test_insert_search() {
     assert(!tree.find_node(50));   // 測試空的 find
     assert(tree.empty() == true);  // 測試 empty()
 
-    auto it = tree.insert(7);
+    auto int_it = tree.insert(7);
     assert(tree.find_node(7)->data == 7);
     assert(tree.get_leftmost_node()->data == 7);
     assert(tree.empty() == false);
-    assert(*it == 7);  // 測試回傳值
+    assert(*int_it == 7);  // 測試回傳值
 
-    it = tree.insert(12);
+    int_it = tree.insert(12);
     assert(tree.find_node(12)->data == 12);
     assert(tree.get_leftmost_node()->data == 7);
     assert(tree.empty() == false);
-    assert(*it == 12);
+    assert(*int_it == 12);
 
-    it = tree.insert(3);
+    int_it = tree.insert(3);
     assert(tree.find_node(3)->data == 3);
     assert(tree.get_leftmost_node()->data == 3);
     assert(tree.empty() == false);
-    assert(*it == 3);
+    assert(*int_it == 3);
 
     tree.insert(6);
     assert(tree.find_node(6)->data == 6);
@@ -51,7 +51,14 @@ void test_insert_search() {
     assert(tree.find_node(4)->data == 4);
     assert(tree.get_leftmost_node()->data == 1);
 
-    tree.insert(4);  // 測試重複的數字
+    tree.insert(4);  // 放入重複的數字
+    auto it = tree.get_leftmost_node();
+    int node_num = 0; 
+    while(it) {
+      node_num++;
+      it = tree.get_successor(it);
+    }
+    assert(node_num == 8); // 測試重複的數字是否有被放進去
   }
 
   /* 由小到大插入 */
