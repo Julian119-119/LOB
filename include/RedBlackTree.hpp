@@ -8,6 +8,7 @@
 #include <memory>
 #include <queue>
 #include <sstream>
+#include <type_traits>
 
 enum class Color : uint8_t { RED, BLACK };
 
@@ -67,9 +68,69 @@ class RedBlackTree {
   static Color getColor(Node* node);
   static void setColor(Node* node, Color newcolor);
   void inorder_helper(Node* subroot, std::stringstream& str, bool& isFirst);
-  static Node* successor(Node* node);  // get the next node in in-order
+  static Node* successor(Node* node);    // get the next node in in-order sort
+  static Node* predecessor(Node* node);  // get the previous node in in-order
+  template<typename K>
+  Node* find_node_ptr(const K& data);
 
  public:
+  /*****************************************************************************
+   *  iterator                                                                 *
+   *****************************************************************************/
+  template <bool isConst>
+  struct rbt_iterator {
+    using iterator_category = std::bidirectional_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = T;
+    using pointer = std::conditional_t<isConst, const T*, T*>;
+    using reference = std::conditional_t<isConst, const T&, T&>;
+
+    explicit rbt_iterator(Node* ptr, RedBlackTree* tree_ptr)
+        : node_(ptr), tree_(tree_ptr) {}
+    explicit rbt_iterator() : node_(nullptr), tree(nullptr) {}
+
+    reference operator*() const { return node_->data; }
+    pointer operator->() const { return &node_->data; }
+
+    rbt_iterator& operator++() {
+      node_ = successor(node_);
+      return *this;
+    }
+    rbt_iterator operator++(int) {
+      rbt_iterator tmp = *this;
+      ++(*this);
+      return tmp;
+    }
+
+    rbt_iterator& operator--() {
+      node_ = predecessor(node_);
+      return *this;
+    }
+    rbt_iterator operator--(int) {
+      rbt_iterator tmp = *this;
+      --(*this);
+      return tmp;
+    }
+
+    friend bool operator==(const rbt_iterator& a, const rbt_iterator& b) {
+      return a.tree_ == b.tree_ && a.node_ == b.node_;
+    }
+    friend bool operator!=(const rbt_iterator& a, const rbt_iterator& b) {
+      return a.tree_ != b.tree_ || a.node_ != b.node_;
+    }
+
+    /* conversion operator */
+    operator rbt_iterator<true>() const {
+      return rbt_iterator<true>(node_, tree_);
+    }
+
+   private:
+    Node* node_;
+    RedBlackTree* tree_;
+  };
+  using iterator = rbt_iterator<false>;
+  using const_iterator = rbt_iterator<true>;
+
   RedBlackTree<T, Compare>()
       : leftmost_node_(nullptr), rightmost_node_(nullptr){};
 
@@ -94,45 +155,15 @@ class RedBlackTree {
    *  查詢                                                                     *
    *****************************************************************************/
   template <typename K>
-  Node* find_node(const K& data);
-  Node* get_leftmost_node() const { return leftmost_node_; }
-  Node* get_rightmost_node() const { return rightmost_node_; }
+  iterator find_node(const K& data);
+  iterator begin() { return rbt_iterator(tree_->leftmost_node_, tree_); }
+  iterator end() { return rbt_iterator(nullptr, tree_); }
 
   /*****************************************************************************
    *  Debug 與 test 用                                                         *
    *****************************************************************************/
   std::string serialization();
   std::string inorder();
-
-  /*****************************************************************************
-   *  iterator                                                                 *
-   *****************************************************************************/
-  struct rbt_iterator {
-    using iterator_category = std::bidirectional_iterator_tag;
-    using difference_type = std::ptrdiff_t;
-    using value_type = T;
-    using pointer = T*;
-    using reference = T&;
-
-    explicit rbt_iterator(Node* ptr) : node_(ptr) {}
-    explicit rbt_iterator() : node_(nullptr) {}
-
-    reference operator*() { return node_->data; }
-    pointer operator->() { return &node_->data; }
-
-    rbt_iterator& operator++() {
-      node_ = successor(node_);
-      return *this;
-    }
-    rbt_iterator operator++(int) {
-      rbt_iterator tmp = *this;
-      ++(*this);
-      return tmp;
-    }
-
-   private:
-    Node* node_;
-  };
 };
 
 /********************************************************************************/
@@ -360,7 +391,37 @@ RedBlackTree<T, Compare>::transplant(Node* u, std::unique_ptr<Node> v) {
 template <typename T, typename Compare>
 template <typename K>
 /* find_node: herogeneously find */
-typename RedBlackTree<T, Compare>::Node* RedBlackTree<T, Compare>::find_node(
+typename RedBlackTree<T, Compare>::iterator RedBlackTree<T, Compare>::find_node(
+    const K& key) {
+  // 確保 O(1) 時間內可以找到最小與最大的 node
+  Compare comp;
+  if (leftmost_node_ &&
+      (!comp(leftmost_node_->data, key) && !comp(key, leftmost_node_->data))) {
+    return iterator(leftmost_node_, this);
+  }
+  if (rightmost_node_ && (!comp(rightmost_node_->data, key) &&
+                          !comp(key, rightmost_node_->data))) {
+    return iterator(rightmost_node_, this);
+  }
+
+  Node* node = root_.get();
+  while (node) {
+    if (comp(key, node->data)) {
+      node = node->left.get();
+    } else if (comp(node->data, key)) {
+      node = node->right.get();
+    } else {
+      return iterator(node, this);
+    }
+  }
+
+  return nullptr;
+}
+
+template <typename T, typename Compare>
+template <typename K>
+/* find_node: herogeneously find */
+typename RedBlackTree<T, Compare>::Node* RedBlackTree<T, Compare>::find_node_ptr(
     const K& key) {
   // 確保 O(1) 時間內可以找到最小與最大的 node
   Compare comp;
@@ -387,6 +448,7 @@ typename RedBlackTree<T, Compare>::Node* RedBlackTree<T, Compare>::find_node(
   return nullptr;
 }
 
+
 template <typename T, typename Compare>
 /* 找尋比自己大的節點中，擁有最小值的 node */
 typename RedBlackTree<T, Compare>::Node* RedBlackTree<T, Compare>::successor(
@@ -405,6 +467,28 @@ typename RedBlackTree<T, Compare>::Node* RedBlackTree<T, Compare>::successor(
     }
     curr = p;
   }
+
+  return curr;
+}
+
+template <typename T, typename Compare>
+typename RedBlackTree<T, Compare>::Node* RedBlackTree<T, Compare>::predecessor(
+    Node* node) {
+  if (!node) return rightmost_node_;
+
+  Node* curr = node;
+  if (node->left) {
+    curr = curr->left.get();
+    while (curr->right) curr = curr->right.get();
+  } else {
+    Node* p = curr->parent;
+    while (p && p->right.get() != curr) {
+      curr = p;
+      p = p->parent;
+    }
+    curr = p;
+  }
+
   return curr;
 }
 
@@ -519,7 +603,7 @@ template <typename T, typename Compare>
 template <typename K>
 void RedBlackTree<T, Compare>::remove(const K& key) {
   // z 為真正要刪除的節點
-  Node* z = find_node(key);
+  Node* z = find_node_ptr(key);
   if (!z || !root_) return;
 
   // 更新 leftmost_node_
