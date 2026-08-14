@@ -70,7 +70,7 @@ class RedBlackTree {
   void inorder_helper(Node* subroot, std::stringstream& str, bool& isFirst);
   static Node* successor(Node* node);    // get the next node in in-order sort
   static Node* predecessor(Node* node);  // get the previous node in in-order
-  template<typename K>
+  template <typename K>
   Node* find_node_ptr(const K& data);
 
  public:
@@ -87,13 +87,13 @@ class RedBlackTree {
 
     explicit rbt_iterator(Node* ptr, RedBlackTree* tree_ptr)
         : node_(ptr), tree_(tree_ptr) {}
-    explicit rbt_iterator() : node_(nullptr), tree(nullptr) {}
+    explicit rbt_iterator() : node_(nullptr), tree_(nullptr) {}
 
     reference operator*() const { return node_->data; }
     pointer operator->() const { return &node_->data; }
 
     rbt_iterator& operator++() {
-      node_ = successor(node_);
+      if (node_) node_ = successor(node_);
       return *this;
     }
     rbt_iterator operator++(int) {
@@ -103,7 +103,10 @@ class RedBlackTree {
     }
 
     rbt_iterator& operator--() {
-      node_ = predecessor(node_);
+      if (node_ == nullptr)
+        node_ = tree_->rightmost_node_;
+      else
+        node_ = predecessor(node_);
       return *this;
     }
     rbt_iterator operator--(int) {
@@ -131,8 +134,7 @@ class RedBlackTree {
   using iterator = rbt_iterator<false>;
   using const_iterator = rbt_iterator<true>;
 
-  RedBlackTree<T, Compare>()
-      : leftmost_node_(nullptr), rightmost_node_(nullptr){};
+  RedBlackTree() : leftmost_node_(nullptr), rightmost_node_(nullptr) {}
 
   bool empty() const { return root_ == nullptr; } /* tree 是否為空 */
 
@@ -156,14 +158,15 @@ class RedBlackTree {
    *****************************************************************************/
   template <typename K>
   iterator find_node(const K& data);
-  iterator begin() { return rbt_iterator(tree_->leftmost_node_, tree_); }
-  iterator end() { return rbt_iterator(nullptr, tree_); }
+  iterator begin() { return iterator(this->leftmost_node_, this); }
+  iterator end() { return iterator(nullptr, this); }
 
   /*****************************************************************************
    *  Debug 與 test 用                                                         *
    *****************************************************************************/
   std::string serialization();
   std::string inorder();
+  friend void test_invariant();
 };
 
 /********************************************************************************/
@@ -415,14 +418,14 @@ typename RedBlackTree<T, Compare>::iterator RedBlackTree<T, Compare>::find_node(
     }
   }
 
-  return nullptr;
+  return iterator(nullptr, this);
 }
 
 template <typename T, typename Compare>
 template <typename K>
 /* find_node: herogeneously find */
-typename RedBlackTree<T, Compare>::Node* RedBlackTree<T, Compare>::find_node_ptr(
-    const K& key) {
+typename RedBlackTree<T, Compare>::Node*
+RedBlackTree<T, Compare>::find_node_ptr(const K& key) {
   // 確保 O(1) 時間內可以找到最小與最大的 node
   Compare comp;
   if (leftmost_node_ &&
@@ -447,7 +450,6 @@ typename RedBlackTree<T, Compare>::Node* RedBlackTree<T, Compare>::find_node_ptr
 
   return nullptr;
 }
-
 
 template <typename T, typename Compare>
 /* 找尋比自己大的節點中，擁有最小值的 node */
@@ -474,7 +476,6 @@ typename RedBlackTree<T, Compare>::Node* RedBlackTree<T, Compare>::successor(
 template <typename T, typename Compare>
 typename RedBlackTree<T, Compare>::Node* RedBlackTree<T, Compare>::predecessor(
     Node* node) {
-  if (!node) return rightmost_node_;
 
   Node* curr = node;
   if (node->left) {
