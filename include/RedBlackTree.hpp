@@ -9,6 +9,7 @@
 #include <queue>
 #include <sstream>
 #include <type_traits>
+#include <random>
 
 enum class Color : uint8_t { RED, BLACK };
 
@@ -85,7 +86,7 @@ class RedBlackTree {
     using pointer = std::conditional_t<isConst, const T*, T*>;
     using reference = std::conditional_t<isConst, const T&, T&>;
 
-    explicit rbt_iterator(Node* ptr, RedBlackTree* tree_ptr)
+    explicit rbt_iterator(Node* ptr, const RedBlackTree* tree_ptr)
         : node_(ptr), tree_(tree_ptr) {}
     explicit rbt_iterator() : node_(nullptr), tree_(nullptr) {}
 
@@ -129,7 +130,7 @@ class RedBlackTree {
 
    private:
     Node* node_;
-    RedBlackTree* tree_;
+    const RedBlackTree* tree_;
   };
   using iterator = rbt_iterator<false>;
   using const_iterator = rbt_iterator<true>;
@@ -167,6 +168,8 @@ class RedBlackTree {
   std::string serialization();
   std::string inorder();
   friend void test_invariant();
+  friend int dfs_test_invariant(Node* node);
+  friend void fuzz_test();
 };
 
 /********************************************************************************/
@@ -476,7 +479,6 @@ typename RedBlackTree<T, Compare>::Node* RedBlackTree<T, Compare>::successor(
 template <typename T, typename Compare>
 typename RedBlackTree<T, Compare>::Node* RedBlackTree<T, Compare>::predecessor(
     Node* node) {
-
   Node* curr = node;
   if (node->left) {
     curr = curr->left.get();

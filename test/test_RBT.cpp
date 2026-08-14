@@ -1,5 +1,8 @@
+#include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <set>
+#include <vector>
 
 #include "RedBlackTree.hpp"
 #include "test_helper.hpp"
@@ -765,35 +768,96 @@ void test_heterogeneous_remove() {
   }
 }
 
+/* 遞迴確認 black height 與是否有連續兩個 RED */
+int dfs_test_invariant(RedBlackTree<int>::Node* node) {
+  if (!node) return 1;
+
+  int left_bh = dfs_test_invariant(node->left.get());
+  if (left_bh == -1) return -1;
+  int right_bh = dfs_test_invariant(node->right.get());
+  if (right_bh == -1) return -1;
+
+  if (left_bh == right_bh) {
+    /* 如果是黑色，則將 black height + 1 後向上傳 */
+    if (RedBlackTree<int>::getColor(node) == Color::BLACK) {
+      return left_bh + 1;
+    } else /* 如果為紅色，則確認沒有連續兩個紅色 */ {
+      if (RedBlackTree<int>::getColor(node->left.get()) == Color::RED)
+        return -1;
+      if (RedBlackTree<int>::getColor(node->right.get()) == Color::RED)
+        return -1;
+      return left_bh;
+    }
+  } else {
+    return -1;
+  }
+}
+
 void test_invariant() {
   {
-    RedBlackTree<int> tree;
+    vector<int> insert_vec = {40, 18, 47, 88, 14, 84, 56, 17, 81, 100,
+                              16, 7,  37, 22, 19, 15, 57, 97, 3,  27,
+                              10, 55, 23, 74, 51, 71, 1,  46, 82, 77};
+    RedBlackTree<int> my_rbt;
+    for (int num : insert_vec) {
+      my_rbt.insert(num);
+      assert(RedBlackTree<int>::getColor(my_rbt.root_.get()) == Color::BLACK);
+      assert(dfs_test_invariant(my_rbt.root_.get()) != -1);
+    }
 
-    tree.insert(17);
-    tree.insert(18);
-    tree.insert(33);
-    tree.insert(34);
-    tree.insert(46);
-    tree.insert(50);
-    tree.insert(53);
-    tree.insert(72);
-    tree.insert(74);
-    tree.insert(80);
-    tree.insert(88);
-
-    /* 測試 root_ 是否為 black */
-    assert(tree.root_->color == Color::BLACK);
-
-    /* 測試沒有連續兩個 Red */
-    auto it = tree.leftmost_node_;
-    while (it) {
-      if (it->color == Color::RED) {
-        if (it->left) assert(it->left->color == Color::BLACK);
-        if (it->right) assert(it->right->color == Color::BLACK);
-      }
-      it = tree.successor(it);
+    vector<int> remove_vec = {19, 23, 27, 22, 47, 15, 3,  55, 7,  100,
+                              14, 97, 84, 16, 46, 56, 82, 40, 17, 37,
+                              18, 1,  81, 71, 57, 51, 77, 74, 10, 88};
+    for (int num : remove_vec) {
+      my_rbt.remove(num);
+      assert(RedBlackTree<int>::getColor(my_rbt.root_.get()) == Color::BLACK);
+      assert(dfs_test_invariant(my_rbt.root_.get()) != -1);
     }
 
     cout << "test_invariant passed!\n" << flush;
   }
+}
+
+void fuzz_test() {
+  for (int times = 0; times < 10; times++) {
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> random_insertion(0, 1);
+    uniform_int_distribution<> random_nums(0, 100000);
+    vector<int> nums_in_rbt;
+    RedBlackTree<int> my_rbt;
+    set<int> other_rbt;
+
+    nums_in_rbt.reserve(64);
+    for (int i = 0; i < 1000; i++) {
+      int isInsertion = random_insertion(gen);
+      if (nums_in_rbt.empty() || isInsertion) {
+        int num = random_nums(gen);
+
+        auto [it, inserted] = other_rbt.insert(num);
+        if (inserted) nums_in_rbt.push_back(num);
+        my_rbt.insert(num);
+
+        assert(equal(other_rbt.begin(), other_rbt.end(), my_rbt.begin(),
+                     my_rbt.end()));
+        assert(RedBlackTree<int>::getColor(my_rbt.root_.get()) == Color::BLACK);
+        assert(dfs_test_invariant(my_rbt.root_.get()) != -1);
+      } else {
+        int idx = random_nums(gen) % nums_in_rbt.size();
+        int num = nums_in_rbt[idx];
+        nums_in_rbt[idx] = nums_in_rbt.back();
+        nums_in_rbt.pop_back();
+
+        other_rbt.erase(num);
+        my_rbt.remove(num);
+
+        assert(equal(other_rbt.begin(), other_rbt.end(), my_rbt.begin(),
+                     my_rbt.end()));
+        assert(RedBlackTree<int>::getColor(my_rbt.root_.get()) == Color::BLACK);
+        assert(dfs_test_invariant(my_rbt.root_.get()) != -1);
+      }
+    }
+  }
+
+  cout << "fuzz_test passed!\n" << flush;
 }

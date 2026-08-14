@@ -11,6 +11,7 @@ int main() {
   test_heterogeneous_remove();
   test_invariant();
   test_get_successor();
+  fuzz_test();
 
   /* test LOB
   std::cout << "\n===============  test lob ===============\n";
