@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "LOB_type.hpp"
-#include "test_helper.hpp"
 
 const double stock_price = 100.0;
 const double tick_size = 0.5;
@@ -81,7 +80,8 @@ void testspend() {
       uint32_t idx =
           id_dist(gen, decltype(id_dist)::param_type(0, all_id.size() - 1));
       // 將要刪除的 order_id 放進 behavior 中
-      behavior.emplace_back(Cancel{idx});
+      uint32_t cancel_id = all_id[idx];
+      behavior.emplace_back(Cancel{cancel_id});
       // 將最後一個元素往前塞
       all_id[idx] = all_id.back();
       all_id.pop_back();

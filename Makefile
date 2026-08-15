@@ -6,7 +6,7 @@ SRC_DIR := src
 OBJ_DIR := obj
 TEST_DIR := test
 BENCHMARK_DIR := benchmark
-TEST_OBJ := $(OBJ_DIR)/test_BST_RBT.o $(OBJ_DIR)/test_LOB_order.o $(OBJ_DIR)/test_LOB_query.o $(OBJ_DIR)/test_main.o
+TEST_OBJ := $(OBJ_DIR)/test_RBT.o $(OBJ_DIR)/test_LOB_order.o $(OBJ_DIR)/test_LOB_query.o $(OBJ_DIR)/test_main.o
 
 $(OBJ_DIR):
 	mkdir -p $@
@@ -14,7 +14,7 @@ $(OBJ_DIR):
 $(OUT_DIR):
 	mkdir -p $@
 
-$(OBJ_DIR)/test_BST_RBT.o: $(TEST_DIR)/test_BST_RBT.cpp | $(OBJ_DIR)
+$(OBJ_DIR)/test_RBT.o: $(TEST_DIR)/test_RBT.cpp | $(OBJ_DIR)
 	$(CXX) $(CPP_FLAGS) -c $< -o $@
 
 $(OBJ_DIR)/test_LOB_order.o: $(TEST_DIR)/test_LOB_order.cpp | $(OBJ_DIR)

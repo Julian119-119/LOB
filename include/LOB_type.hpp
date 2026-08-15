@@ -7,6 +7,7 @@
 #include <memory_resource>
 #include <ostream>
 #include <vector>
+#include <unordered_map>
 
 #include "RedBlackTree.hpp"
 

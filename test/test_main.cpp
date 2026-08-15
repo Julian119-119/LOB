@@ -3,15 +3,15 @@
 #include "test_helper.hpp"
 
 int main() {
-  /* test BST */
-  std::cout << "\n===============  test BST ===============\n";
-  testSmallest();
-  testInt();
-  testString();
-
   /* test RBT */
   std::cout << "\n===============  test RBT ===============\n";
-  testRedBlackTrees();
+  test_insert_search();
+  test_remove();
+  test_insert_emplace();
+  test_heterogeneous_remove();
+  test_invariant();
+  test_get_successor();
+  fuzz_test();
 
   /* test LOB */
   std::cout << "\n===============  test lob ===============\n";
