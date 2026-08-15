@@ -461,7 +461,7 @@ typename RedBlackTree<T, Compare>::const_iterator RedBlackTree<T, Compare>::find
     }
   }
 
-  return iterator(nullptr, this);
+  return const_iterator(nullptr, this);
 }
 
 template <typename T, typename Compare>
