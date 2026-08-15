@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "LOB_type.hpp"
-#include "test_helper.hpp"
 
 const double stock_price = 100.0;
 const double tick_size = 0.5;

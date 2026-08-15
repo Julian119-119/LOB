@@ -18,21 +18,21 @@ double LOB::get_best_bid_price() const {
   if (buyer_tree.empty())
     return PRICE_NO_VALUE;
   else
-    return buyer_tree.get_leftmost_node()->data.getprice();
+    return buyer_tree.begin()->getprice();
 }
 
 double LOB::get_best_ask_price() const {
   if (seller_tree.empty())
     return PRICE_NO_VALUE;
   else
-    return seller_tree.get_leftmost_node()->data.getprice();
+    return seller_tree.begin()->getprice();
 }
 
 uint64_t LOB::get_best_bid_volume() const {
   if (buyer_tree.empty()) {
     return VOLUME_NO_VALUE;
   } else {
-    return buyer_tree.get_leftmost_node()->data.get_total_volume();
+    return buyer_tree.begin()->get_total_volume();
   }
 }
 
@@ -40,7 +40,7 @@ uint64_t LOB::get_best_ask_volume() const {
   if (seller_tree.empty()) {
     return VOLUME_NO_VALUE;
   } else {
-    return seller_tree.get_leftmost_node()->data.get_total_volume();
+    return seller_tree.begin()->get_total_volume();
   }
 }
 
@@ -73,25 +73,19 @@ bool LOB::has_order(uint32_t order_idx) const {
 uint64_t LOB::get_volume_at_price(double tar_price, Side tar_side) const {
   /* 買方 */
   if (tar_side == Side::BUY) {
-    auto it = buyer_tree.get_leftmost_node();
-    while (it && it->data.price != tar_price) {
-      it = buyer_tree.get_successor(it);
-    }
+    auto it = buyer_tree.find_node(tar_price);
 
-    if (!it)
+    if (it == buyer_tree.end())
       return VOLUME_NO_VALUE;
     else
-      return it->data.total_volume;
+      return it->total_volume;
   } else /* 賣方 */ {
-    auto it = seller_tree.get_leftmost_node();
-    while (it && it->data.price != tar_price) {
-      it = seller_tree.get_successor(it);
-    }
+    auto it = seller_tree.find_node(tar_price);
 
-    if (!it)
+    if (it == seller_tree.end())
       return VOLUME_NO_VALUE;
     else
-      return it->data.total_volume;
+      return it->total_volume;
   }
 }
 
@@ -100,16 +94,16 @@ std::vector<PriceLevelInfo> LOB::get_top_k_info(size_t k, Side side) {
   info.reserve(k);
 
   if (side == Side::BUY) /* 買方 */ {
-    auto it = buyer_tree.get_leftmost_node();
-    for (size_t i = 0; it && i < k; i++) {
-      info.emplace_back(it->data.getprice(), it->data.get_total_volume());
-      it = buyer_tree.get_successor(it);
+    auto it = buyer_tree.begin();
+    for (size_t i = 0; it != buyer_tree.end() && i < k; i++) {
+      info.emplace_back(it->getprice(), it->get_total_volume());
+      ++it;
     }
   } else /* 賣方 */ {
-    auto it = seller_tree.get_leftmost_node();
-    for (size_t i = 0; it && i < k; i++) {
-      info.emplace_back(it->data.getprice(), it->data.get_total_volume());
-      it = seller_tree.get_successor(it);
+    auto it = seller_tree.begin();
+    for (size_t i = 0; it != seller_tree.end() && i < k; i++) {
+      info.emplace_back(it->getprice(), it->get_total_volume());
+      ++it;
     }
   }
 
@@ -121,28 +115,30 @@ void LOB::order_matching(Order& new_order) {
   // 否則直接徹單
   if (new_order.time_in_force == Time_In_Force::FOK) {
     if (new_order.side == Side::BUY) /* 新訂單為買方 */ {
-      auto order_it = seller_tree.get_leftmost_node();
+      auto order_it = seller_tree.begin();
       uint32_t curr_total_volume = 0;
       while (1) {
-        if (order_it && order_it->data.price <= new_order.price) {
-          curr_total_volume += order_it->data.total_volume;
+        if (order_it != seller_tree.end() &&
+            order_it->price <= new_order.price) {
+          curr_total_volume += order_it->total_volume;
           if (curr_total_volume >= new_order.volume)
             break;
           else
-            order_it = seller_tree.get_successor(order_it);
+            ++order_it;
         } else
           return;
       }
     } else /* 新訂單為賣方 */ {
-      auto order_it = buyer_tree.get_leftmost_node();
+      auto order_it = buyer_tree.begin();
       uint32_t curr_total_volume = 0;
       while (1) {
-        if (order_it && order_it->data.price >= new_order.price) {
-          curr_total_volume += order_it->data.total_volume;
+        if (order_it != buyer_tree.end() &&
+            order_it->price >= new_order.price) {
+          curr_total_volume += order_it->total_volume;
           if (curr_total_volume >= new_order.volume)
             break;
           else
-            order_it = buyer_tree.get_successor(order_it);
+            ++order_it;
         } else
           return;
       }
@@ -152,7 +148,7 @@ void LOB::order_matching(Order& new_order) {
   /* 實際撮合 */
   if (new_order.side == Side::BUY) /* 新訂單為買方 */ {
     while (!seller_tree.empty() && new_order.volume) {
-      PriceLevel* seller_price_level = &seller_tree.get_leftmost_node()->data;
+      auto seller_price_level = seller_tree.begin();
       // 成交
       if (seller_price_level->price <= new_order.price) {
         Order& seller_order = seller_price_level->front();
@@ -190,7 +186,7 @@ void LOB::order_matching(Order& new_order) {
     }
   } else /* 新訂單為賣方 */ {
     while (!buyer_tree.empty() && new_order.volume) {
-      PriceLevel* buyer_price_level = &buyer_tree.get_leftmost_node()->data;
+      auto buyer_price_level = buyer_tree.begin();
       // 成交
       if (buyer_price_level->price >= new_order.price) {
         Order& buyer_order = buyer_price_level->front();

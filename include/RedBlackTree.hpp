@@ -7,9 +7,9 @@
 #include <iterator>
 #include <memory>
 #include <queue>
+#include <random>
 #include <sstream>
 #include <type_traits>
-#include <random>
 
 enum class Color : uint8_t { RED, BLACK };
 
@@ -159,17 +159,27 @@ class RedBlackTree {
    *****************************************************************************/
   template <typename K>
   iterator find_node(const K& data);
+  template <typename K>
+  const_iterator find_node(const K& data) const;
   iterator begin() { return iterator(this->leftmost_node_, this); }
+  const_iterator begin() const {
+    return const_iterator(this->leftmost_node_, this);
+  }
   iterator end() { return iterator(nullptr, this); }
+  const_iterator end() const { return const_iterator(nullptr, this); }
 
   /*****************************************************************************
    *  Debug 與 test 用                                                         *
    *****************************************************************************/
   std::string serialization();
   std::string inorder();
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnon-template-friend"
   friend void test_invariant();
   friend int dfs_test_invariant(Node* node);
   friend void fuzz_test();
+#pragma GCC diagnostic pop
 };
 
 /********************************************************************************/
@@ -418,6 +428,36 @@ typename RedBlackTree<T, Compare>::iterator RedBlackTree<T, Compare>::find_node(
       node = node->right.get();
     } else {
       return iterator(node, this);
+    }
+  }
+
+  return iterator(nullptr, this);
+}
+
+template <typename T, typename Compare>
+template <typename K>
+/* find_node: herogeneously find */
+typename RedBlackTree<T, Compare>::const_iterator RedBlackTree<T, Compare>::find_node(
+    const K& key) const {
+  // 確保 O(1) 時間內可以找到最小與最大的 node
+  Compare comp;
+  if (leftmost_node_ &&
+      (!comp(leftmost_node_->data, key) && !comp(key, leftmost_node_->data))) {
+    return const_iterator(leftmost_node_, this);
+  }
+  if (rightmost_node_ && (!comp(rightmost_node_->data, key) &&
+                          !comp(key, rightmost_node_->data))) {
+    return const_iterator(rightmost_node_, this);
+  }
+
+  Node* node = root_.get();
+  while (node) {
+    if (comp(key, node->data)) {
+      node = node->left.get();
+    } else if (comp(node->data, key)) {
+      node = node->right.get();
+    } else {
+      return const_iterator(node, this);
     }
   }
 
