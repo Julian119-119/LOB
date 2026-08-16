@@ -1,18 +1,18 @@
+#include <cassert>
 #include <iostream>
 #include <vector>
-#include <cassert>
 
-#include "LOB_type.hpp"
+#include "LOB_L3_type.hpp"
 #include "test_helper.hpp"
 
 /* help function: 下訂單 */
-inline static void add_buyer_order(LOB& lob, uint32_t idx, double price,
+inline static void add_buyer_order(L3_LOB& lob, uint32_t idx, double price,
                                    uint64_t ts, uint32_t vol,
                                    Time_In_Force tif = Time_In_Force::GTC) {
   Order new_order{idx, Side::BUY, price, ts, vol, tif};
   lob.place_order(new_order);
 }
-inline static void add_seller_order(LOB& lob, uint32_t idx, double price,
+inline static void add_seller_order(L3_LOB& lob, uint32_t idx, double price,
                                     uint64_t ts, uint32_t vol,
                                     Time_In_Force tif = Time_In_Force::GTC) {
   Order new_order{idx, Side::SELL, price, ts, vol, tif};
@@ -22,7 +22,7 @@ inline static void add_seller_order(LOB& lob, uint32_t idx, double price,
 void test_query() {
   /* 測試 get_best_bid_price 與 get_best_bid_volume */
   {
-    LOB lob;
+    L3_LOB lob;
 
     assert(!is_valid_price(lob.get_best_bid_price()));
     assert(!is_valid_volume(lob.get_best_bid_volume()));
@@ -59,7 +59,7 @@ void test_query() {
 
   /* 測試 get_best_ask_price 和 get_best_ask_volume */
   {
-    LOB lob;
+    L3_LOB lob;
 
     assert(!is_valid_price(lob.get_best_ask_price()));
     assert(!is_valid_volume(lob.get_best_ask_volume()));
@@ -93,7 +93,7 @@ void test_query() {
 
   /* 測試 get_mid_price 和 get_spread */
   {
-    LOB lob;
+    L3_LOB lob;
 
     assert(!is_valid_price(lob.get_mid_price()));
     assert(!is_valid_price(lob.get_spread()));
@@ -126,7 +126,7 @@ void test_query() {
   /* 測試 seller side 的 get_top_k_info */
   /* 測試當 k < 掛單數時的 get_top_k_info */
   {
-    LOB lob;
+    L3_LOB lob;
     std::vector<PriceLevelInfo> info_list;
     int test_num = 5;
     int price_level_num = 6;
@@ -162,7 +162,7 @@ void test_query() {
 
   /* 測試當 k < 掛單數時的 get_top_k_info */
   {
-    LOB lob;
+    L3_LOB lob;
     std::vector<PriceLevelInfo> info_list;
     int test_num = 5;
     int price_level_num = 2;
@@ -199,7 +199,7 @@ void test_query() {
   /* 測試 buy side 的 get_top_k_info */
   /* 測試當 k < 掛單數時的 get_top_k_info */
   {
-    LOB lob;
+    L3_LOB lob;
     std::vector<PriceLevelInfo> info_list;
     int test_num = 5;
     int price_level_num = 6;
@@ -234,7 +234,7 @@ void test_query() {
 
     /* 測試當 k < 掛單數時的 get_top_k_info */
     {
-      LOB lob;
+      L3_LOB lob;
       std::vector<PriceLevelInfo> info_list;
       int test_num = 5;
       int price_level_num = 2;

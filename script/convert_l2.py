@@ -10,3 +10,4 @@ sample_data = sample_data[["timestamp", "side", "price", "volume", "is_snapshot"
 sample_data["is_snapshot"] = sample_data["is_snapshot"].astype(str).str.lower()
 
 sample_data.to_csv("sample_data/processed/convertion_l2_data.csv", index=False)
+

@@ -1,4 +1,4 @@
-#include "LOB_type.hpp"
+#include "LOB_L3_type.hpp"
 
 auto PriceLevel::push(Order newOrder) {
   total_volume += newOrder.volume;
@@ -14,21 +14,21 @@ void PriceLevel::pop() {
   order_queue.pop_front();
 }
 
-double LOB::get_best_bid_price() const {
+double L3_LOB::get_best_bid_price() const {
   if (buyer_tree.empty())
     return PRICE_NO_VALUE;
   else
     return buyer_tree.begin()->getprice();
 }
 
-double LOB::get_best_ask_price() const {
+double L3_LOB::get_best_ask_price() const {
   if (seller_tree.empty())
     return PRICE_NO_VALUE;
   else
     return seller_tree.begin()->getprice();
 }
 
-uint64_t LOB::get_best_bid_volume() const {
+uint64_t L3_LOB::get_best_bid_volume() const {
   if (buyer_tree.empty()) {
     return VOLUME_NO_VALUE;
   } else {
@@ -36,7 +36,7 @@ uint64_t LOB::get_best_bid_volume() const {
   }
 }
 
-uint64_t LOB::get_best_ask_volume() const {
+uint64_t L3_LOB::get_best_ask_volume() const {
   if (seller_tree.empty()) {
     return VOLUME_NO_VALUE;
   } else {
@@ -44,7 +44,7 @@ uint64_t LOB::get_best_ask_volume() const {
   }
 }
 
-double LOB::get_mid_price() const {
+double L3_LOB::get_mid_price() const {
   if (buyer_tree.empty() || seller_tree.empty()) {
     return PRICE_NO_VALUE;
   }
@@ -54,7 +54,7 @@ double LOB::get_mid_price() const {
   return best_bid + (best_ask - best_bid) / 2;
 }
 
-double LOB::get_spread() const {
+double L3_LOB::get_spread() const {
   if (buyer_tree.empty() || seller_tree.empty()) {
     return PRICE_NO_VALUE;
   }
@@ -62,7 +62,7 @@ double LOB::get_spread() const {
   return get_best_ask_price() - get_best_bid_price();
 }
 
-bool LOB::has_order(uint32_t order_idx) const {
+bool L3_LOB::has_order(uint32_t order_idx) const {
   if (order_map.find(order_idx) != order_map.end()) {
     return true;
   } else {
@@ -70,7 +70,7 @@ bool LOB::has_order(uint32_t order_idx) const {
   }
 }
 
-uint64_t LOB::get_volume_at_price(double tar_price, Side tar_side) const {
+uint64_t L3_LOB::get_volume_at_price(double tar_price, Side tar_side) const {
   /* 買方 */
   if (tar_side == Side::BUY) {
     auto it = buyer_tree.find_node(tar_price);
@@ -89,7 +89,7 @@ uint64_t LOB::get_volume_at_price(double tar_price, Side tar_side) const {
   }
 }
 
-std::vector<PriceLevelInfo> LOB::get_top_k_info(size_t k, Side side) {
+std::vector<PriceLevelInfo> L3_LOB::get_top_k_info(size_t k, Side side) {
   std::vector<PriceLevelInfo> info;
   info.reserve(k);
 
@@ -110,7 +110,7 @@ std::vector<PriceLevelInfo> LOB::get_top_k_info(size_t k, Side side) {
   return info;
 }
 
-void LOB::order_matching(Order& new_order) {
+void L3_LOB::order_matching(Order& new_order) {
   // 如果 time in force 為 FOK 則先試跑，確認可全部成交才撮合
   // 否則直接徹單
   if (new_order.time_in_force == Time_In_Force::FOK) {
@@ -225,9 +225,9 @@ void LOB::order_matching(Order& new_order) {
   }
 }
 
-void LOB::place_order(Order new_order) { order_matching(new_order); }
+void L3_LOB::place_order(Order new_order) { order_matching(new_order); }
 
-void LOB::cancel_order(uint32_t tar_idx) {
+void L3_LOB::cancel_order(uint32_t tar_idx) {
   auto location_lt = order_map.find(tar_idx);
   if (location_lt == order_map.end()) {
     return;

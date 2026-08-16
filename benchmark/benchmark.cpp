@@ -4,7 +4,7 @@
 #include <variant>
 #include <vector>
 
-#include "LOB_type.hpp"
+#include "LOB_l3_type.hpp"
 
 const double stock_price = 100.0;
 const double tick_size = 0.5;
@@ -25,10 +25,12 @@ struct Place {
 using Behavior = std::variant<Place, Cancel>;
 
 // 使用 visit 時，必須有的 templete
-template<class... Ts>
-struct overloads : Ts... { using Ts::operator()...; };
+template <class... Ts>
+struct overloads : Ts... {
+  using Ts::operator()...;
+};
 
-template<class... Ts>
+template <class... Ts>
 overloads(Ts...) -> overloads<Ts...>;
 
 void testspend() {

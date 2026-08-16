@@ -1,17 +1,17 @@
 #include <cassert>
 #include <iostream>
 
-#include "LOB_type.hpp"
+#include "LOB_L3_type.hpp"
 #include "test_helper.hpp"
 
 /* help function: 下訂單 */
-inline static void add_buyer_order(LOB& lob, uint32_t idx, double price,
+inline static void add_buyer_order(L3_LOB& lob, uint32_t idx, double price,
                                    uint64_t ts, uint32_t vol,
                                    Time_In_Force tif = Time_In_Force::GTC) {
   Order new_order{idx, Side::BUY, price, ts, vol, tif};
   lob.place_order(new_order);
 }
-inline static void add_seller_order(LOB& lob, uint32_t idx, double price,
+inline static void add_seller_order(L3_LOB& lob, uint32_t idx, double price,
                                     uint64_t ts, uint32_t vol,
                                     Time_In_Force tif = Time_In_Force::GTC) {
   Order new_order{idx, Side::SELL, price, ts, vol, tif};
@@ -21,7 +21,7 @@ inline static void add_seller_order(LOB& lob, uint32_t idx, double price,
 void test_order() {
   /* 測試 GTC 的下單與撮合 */
   {
-    LOB lob;
+    L3_LOB lob;
 
     assert(lob.has_order(1U) == false);
     assert(!is_valid_volume(lob.get_volume_at_price(100, Side::BUY)));
@@ -68,7 +68,7 @@ void test_order() {
 
   /* 測試買方 IOC 的下單與撮合 */
   {
-    LOB lob;
+    L3_LOB lob;
 
     // 測試 lob 為空
     add_buyer_order(lob, 1U, 80.0, 999ULL, 80U, Time_In_Force::IOC);
@@ -133,7 +133,7 @@ void test_order() {
 
   /* 測試賣方 IOC 的下單與撮合 */
   {
-    LOB lob;
+    L3_LOB lob;
 
     // 測試 lob 為空
     add_buyer_order(lob, 1U, 80.0, 999ULL, 80U, Time_In_Force::IOC);
@@ -200,7 +200,7 @@ void test_order() {
 
   /* 測試買方 FOK 的下單與撮合 */
   {
-    LOB lob;
+    L3_LOB lob;
 
     // 測試 lob 為空
     add_buyer_order(lob, 1U, 80.0, 999ULL, 80U, Time_In_Force::FOK);
@@ -298,7 +298,7 @@ void test_order() {
 
   /* 測試賣方 FOK 的賣單與撮合 */
   {
-    LOB lob;
+    L3_LOB lob;
 
     // 測試 lob 為空
     add_seller_order(lob, 1U, 80.0, 999ULL, 80U, Time_In_Force::FOK);
@@ -399,7 +399,7 @@ void test_order() {
 
   /* 測試取消訂單 */
   {
-    LOB lob;
+    L3_LOB lob;
     std::vector<uint32_t> order_list;
     order_list.reserve(16);
 

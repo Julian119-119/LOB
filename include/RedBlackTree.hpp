@@ -135,8 +135,11 @@ class RedBlackTree {
   using const_iterator = rbt_iterator<true>;
 
   RedBlackTree() : leftmost_node_(nullptr), rightmost_node_(nullptr) {}
-
-  bool empty() const { return root_ == nullptr; } /* tree 是否為空 */
+  void clear() /* 清空整顆樹*/ {
+    root_.reset(nullptr);
+    leftmost_node_ = nullptr;
+    rightmost_node_ = nullptr;
+  }
 
   /*****************************************************************************
    *  插入與刪除                                                               *
@@ -156,6 +159,7 @@ class RedBlackTree {
   /*****************************************************************************
    *  查詢                                                                     *
    *****************************************************************************/
+  bool empty() const { return root_ == nullptr; } /* tree 是否為空 */
   template <typename K>
   iterator find_node(const K& data);
   template <typename K>
@@ -436,8 +440,8 @@ typename RedBlackTree<T, Compare>::iterator RedBlackTree<T, Compare>::find_node(
 template <typename T, typename Compare>
 template <typename K>
 /* find_node: herogeneously find */
-typename RedBlackTree<T, Compare>::const_iterator RedBlackTree<T, Compare>::find_node(
-    const K& key) const {
+typename RedBlackTree<T, Compare>::const_iterator
+RedBlackTree<T, Compare>::find_node(const K& key) const {
   // 確保 O(1) 時間內可以找到最小與最大的 node
   Compare comp;
   if (leftmost_node_ &&

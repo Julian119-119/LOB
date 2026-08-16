@@ -1,7 +1,7 @@
-#ifndef __LOB_TYPE_HPP__
-#define __LOB_TYPE_HPP__
+#ifndef __LOB_L3_TYPE_HPP__
+#define __LOB_L3_TYPE_HPP__
 
-#include <cstdint>
+
 #include <iterator>
 #include <list>
 #include <memory_resource>
@@ -10,39 +10,7 @@
 #include <unordered_map>
 
 #include "RedBlackTree.hpp"
-
-static constexpr uint32_t IDX_NO_VALUE = std::numeric_limits<uint32_t>::max();
-static constexpr uint64_t VOLUME_NO_VALUE =
-    std::numeric_limits<uint64_t>::max();
-static constexpr double PRICE_NO_VALUE = std::numeric_limits<double>::max();
-
-/*****************************************************************************
- * is_valid function: 用於判斷回傳值是否為真                                 *
- *****************************************************************************/
-inline bool is_valid_idx(uint32_t idx) { return idx != IDX_NO_VALUE; }
-
-inline bool is_valid_volume(uint64_t volume) {
-  return volume != VOLUME_NO_VALUE;
-}
-
-inline bool is_valid_price(double price) { return price != PRICE_NO_VALUE; }
-
-/*****************************************************************************
- * Side: 標記該筆訂單為買方還是賣方                                          *
- * Time_In_Force: 標記該筆訂單的 time in force 種類                          *
- *****************************************************************************/
-enum class Side : uint8_t { BUY, SELL };
-enum class Time_In_Force : uint8_t { GTC, IOC, FOK };
-
-inline std::ostream& operator<<(std::ostream& os, const Side& side) {
-  if (side == Side::BUY) {
-    os << "BUY";
-  } else {
-    os << "SELL";
-  }
-
-  return os;
-}
+#include "LOB_common.hpp"
 
 /*****************************************************************************
  * Order: 訂單。紀錄每筆交易                                                 *
@@ -92,7 +60,7 @@ class PriceLevel {
   void pop();
   bool empty() { return order_queue.empty(); }
 
-  friend class LOB;
+  friend class L3_LOB;
   friend std::ostream& operator<<(std::ostream& os, const PriceLevel& pl);
 };
 
@@ -116,16 +84,6 @@ struct OrderLocation {
 };
 
 /*****************************************************************************
- * PriceLevelInfo: 用於回傳資訊                                              *
- *****************************************************************************/
-struct PriceLevelInfo {
-  double price;
-  uint64_t volume;
-
-  PriceLevelInfo(double p, uint64_t vol) : price(p), volume(vol) {};
-};
-
-/*****************************************************************************
  * Less_priceLevel: 比較兩者的 price 是否比較小。用於 seller tree            *
  *****************************************************************************/
 class Less_priceLevel {
@@ -145,7 +103,7 @@ class Less_priceLevel {
 };
 
 /*****************************************************************************
- * Less_priceLevel: 比較兩者的 price 是否比較小。用於 buyer tree             *
+ * Greater_priceLevel: 比較兩者的 price 是否比較大。用於 buyer tree          *
  *****************************************************************************/
 class Greater_priceLevel {
  public:
@@ -164,9 +122,9 @@ class Greater_priceLevel {
 };
 
 /*****************************************************************************
- * LOB:  limit order bool 主體                                               *
+ * L3_LOB:  limit order bool 主體                                               *
  *****************************************************************************/
-class LOB {
+class L3_LOB {
  private:
   std::pmr::unsynchronized_pool_resource pool;
 
@@ -176,7 +134,7 @@ class LOB {
 
   void order_matching(Order& new_order); /* 訂單撮合 */
  public:
-  LOB() : order_map(&pool) {}
+  L3_LOB() : order_map(&pool) {}
 
   /* 查詢 */
   double get_best_bid_price() const;
@@ -185,7 +143,7 @@ class LOB {
   uint64_t get_best_ask_volume() const;
   double get_mid_price() const;             /* 取得買賣方中間價格 */
   double get_spread() const;                /* 取得買賣價差 */
-  bool has_order(uint32_t order_idx) const; /* 判斷訂單是否在 LOB 中 */
+  bool has_order(uint32_t order_idx) const; /* 判斷訂單是否在 L3_LOB 中 */
   uint64_t get_volume_at_price(double tar_price, Side side) const;
   std::vector<PriceLevelInfo> get_top_k_info(size_t k, Side side);
 

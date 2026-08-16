@@ -13,11 +13,15 @@ int main() {
   test_get_successor();
   fuzz_test();
 
-  /* test LOB */
-  std::cout << "\n===============  test lob ===============\n";
+  /* test L3_LOB */
+  std::cout << "\n=============  test L3_LOB  =============\n";
   test_query();
   std::cout << '\n';
   test_order();
 
+  /* test L2_LOB */
+  std::cout << "\n=============  test L2_LOB  =============\n";
+  test_apply_snapshot();
+  
   return 0;
 }

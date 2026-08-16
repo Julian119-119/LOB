@@ -10,9 +10,12 @@ void test_invariant();
 void test_get_successor();
 void fuzz_test();
 
-/* test LOB */
+/* test L3_LOB */
 void test_query();
 void test_order();
 void testspend();
+
+/* test L2_LOB */
+void test_apply_snapshot();
 
 #endif
