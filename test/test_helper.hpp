@@ -17,5 +17,6 @@ void testspend();
 
 /* test L2_LOB */
 void test_apply_snapshot();
+void test_load_CSV_snapshot();
 
 #endif

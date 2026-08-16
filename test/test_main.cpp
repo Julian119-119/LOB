@@ -22,6 +22,7 @@ int main() {
   /* test L2_LOB */
   std::cout << "\n=============  test L2_LOB  =============\n";
   test_apply_snapshot();
+  test_load_CSV_snapshot();
   
   return 0;
 }

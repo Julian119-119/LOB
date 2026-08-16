@@ -72,7 +72,14 @@ struct Rows_data {
 
   Rows_data(double p, uint64_t vol, Side sd, bool is_ss)
       : price(p), volume(vol), side(sd), is_snapshot(is_ss) {}
+
+  friend bool operator==(const Rows_data& a, const Rows_data& b);
 };
+
+inline bool operator==(const Rows_data& a, const Rows_data& b) {
+  return a.price == b.price && a.volume == b.volume && a.side == b.side &&
+         a.is_snapshot == b.is_snapshot;
+}
 
 /*****************************************************************************
  * L2_LOB:  limit order bool 主體                                            *
