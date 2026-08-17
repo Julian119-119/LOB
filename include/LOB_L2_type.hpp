@@ -91,8 +91,7 @@ class L2_LOB {
 
  public:
   void apply_snapshot(const std::vector<Rows_data>& rows); /* 重建 LOB */
-  std::vector<Rows_data> load_CSV_snapshot(
-      const std::string& path); /* 解析 CSV */
+  void load_CSV_snapshot(const std::string& path);         /* 解析 CSV */
 
   /* 查詢 */
   double get_best_bid_price() const;    /* 取得最佳賣價       */

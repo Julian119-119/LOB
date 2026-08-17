@@ -2,6 +2,8 @@
 
 #include <fstream>
 #include <iostream>
+#include <optional>
+#include <stdexcept>
 #include <string>
 
 /*****************************************************************************
@@ -98,55 +100,85 @@ std::vector<PriceLevelInfo> L2_LOB::get_top_k_info(size_t k, Side side) {
 /*****************************************************************************
  * load_CSV_snapshot: 處理解析的 CSV 檔                                      *
  *****************************************************************************/
-std::vector<Rows_data> L2_LOB::load_CSV_snapshot(const std::string& path) {
+void L2_LOB::load_CSV_snapshot(const std::string& path) {
   std::vector<Rows_data> rows;
   rows.reserve(512);
   std::fstream fin;
   fin.open(path, std::ios::in);
+  if (!fin.is_open()) {
+    throw std::runtime_error(
+        "L2_LOB::load_CSV_snapshot: failed to open file: " + path);
+  }
 
-  double row_price;
-  uint64_t row_total_volume;
-  Side row_side;
-  bool row_is_snapshot;
-
-  bool isTitle = true;
+  bool current_batch_is_snapshot = true;
   std::string line;
-  while (getline(fin, line)) {
-    if (!isTitle) {
+  std::optional<Rows_data> pending;
+
+  /* 直接讀取標題列，並丟棄它 */
+  getline(fin, line);
+  line.clear();
+
+  while (1) {
+    double row_price;
+    uint64_t row_total_volume;
+    Side row_side;
+    bool row_is_snapshot;
+
+    if (!pending.has_value()) {
+      /* 在沒有暫存值的時候，才讀取 */
+      /* 若讀取失敗，則代表讀完了 */
+      if (!getline(fin, line)) {
+        /* 將最後一個狀態的 Rows_data 應用後才結束 */
+        apply_snapshot(rows);
+        return;
+      }
+
+      /* 解析字串 */
       std::stringstream ss(line);
       std::string field;
 
       getline(ss, field, ','); /* 讀取 timestamp */
-
       getline(ss, field, ','); /* 讀取 side */
       if (field == "bid") {
         row_side = Side::BUY;
       } else {
         row_side = Side::SELL;
       }
-
       getline(ss, field, ','); /* 讀取 price */
       row_price = std::stod(field);
-
       getline(ss, field, ','); /* 讀取 volume */
       row_total_volume = std::stoull(field);
-
       getline(ss, field, ','); /* 讀取 is_snapshot */
       if (field == "true") {
         row_is_snapshot = true;
       } else {
         row_is_snapshot = false;
       }
+    } else /* 有暫存值，則直接用 */ {
+      Rows_data row_data = pending.value();
+      pending.reset();
 
+      row_side = row_data.side;
+      row_price = row_data.price;
+      row_total_volume = row_data.volume;
+      row_is_snapshot = row_data.is_snapshot;
+    }
+
+    /* 發現狀態不同 */
+    /* 將這批處理好的狀態資訊，放入 apply_snapshot */
+    if (current_batch_is_snapshot != row_is_snapshot) {
+      pending =
+          Rows_data(row_price, row_total_volume, row_side, row_is_snapshot);
+      apply_snapshot(rows);
+      rows.clear();
+      current_batch_is_snapshot =
+          current_batch_is_snapshot == true ? false : true;
+    } else /* 狀態相同，則繼續建構 rows */ {
       rows.emplace_back(row_price, row_total_volume, row_side, row_is_snapshot);
-    } else {
-      isTitle = false;
     }
 
     line.clear();
   }
-
-  return rows;
 }
 
 /*****************************************************************************
@@ -171,7 +203,6 @@ void L2_LOB::apply_snapshot(const std::vector<Rows_data>& rows) {
                                    row_data.volume);
       }
     } else /* delta：修改 Price_Level */ {
-
       /* 剛開始進入 delta */
       if (prev_is_snapshot == true) {
         prev_is_snapshot = false;
@@ -188,8 +219,9 @@ void L2_LOB::apply_snapshot(const std::vector<Rows_data>& rows) {
             it->total_volume = row_data.volume;
           }
         } else /* 插入新的節點 */ {
-          buyer_tree.insert_emplace(row_data.price, row_data.price,
-                                    row_data.volume);
+          if (row_data.volume != 0)
+            buyer_tree.insert_emplace(row_data.price, row_data.price,
+                                      row_data.volume);
         }
       } else /* 賣方 */ {
         auto it = seller_tree.find_node(row_data.price);
@@ -200,8 +232,9 @@ void L2_LOB::apply_snapshot(const std::vector<Rows_data>& rows) {
             it->total_volume = row_data.volume;
           }
         } else {
-          seller_tree.insert_emplace(row_data.price, row_data.price,
-                                     row_data.volume);
+          if (row_data.volume != 0)
+            seller_tree.insert_emplace(row_data.price, row_data.price,
+                                       row_data.volume);
         }
       }
     }
