@@ -41,14 +41,14 @@ void test_apply_snapshot() {
   {
     L2_LOB book;
     std::vector<Rows_data> rows;
-    rows.emplace_back(100.5, 100, Side::BUY, true);
-    rows.emplace_back(100.8, 50, Side::BUY, true);
-    rows.emplace_back(100.7, 200, Side::BUY, true);
-    rows.emplace_back(110.0, 10, Side::BUY, true);
-    rows.emplace_back(10, 150, Side::SELL, true);
-    rows.emplace_back(80.0, 10, Side::SELL, true);
-    rows.emplace_back(50.7, 200, Side::SELL, true);
-    rows.emplace_back(20.8, 50, Side::SELL, true);
+    rows.emplace_back(1001, 100.5, 100, Side::BUY, true);
+    rows.emplace_back(1002, 100.8, 50, Side::BUY, true);
+    rows.emplace_back(1003, 100.7, 200, Side::BUY, true);
+    rows.emplace_back(1004, 110.0, 10, Side::BUY, true);
+    rows.emplace_back(1005, 10, 150, Side::SELL, true);
+    rows.emplace_back(1006, 80.0, 10, Side::SELL, true);
+    rows.emplace_back(1007, 50.7, 200, Side::SELL, true);
+    rows.emplace_back(1008, 20.8, 50, Side::SELL, true);
     book.apply_snapshot(rows);
 
     std::vector<PriceLevelInfo> buy_ans;
@@ -76,26 +76,26 @@ void test_apply_snapshot() {
     std::vector<Rows_data> rows;
 
     /* 預設 L2_LOB 的 Rows_data */
-    rows.emplace_back(6421.5, 18640, Side::SELL, true);
-    rows.emplace_back(6422, 1190, Side::SELL, true);
-    rows.emplace_back(6422.5, 1080, Side::SELL, true);
-    rows.emplace_back(6423, 1400, Side::SELL, true);
-    rows.emplace_back(6421, 141360, Side::BUY, true);
-    rows.emplace_back(6420.5, 18830, Side::BUY, true);
-    rows.emplace_back(6420, 34410, Side::BUY, true);
-    rows.emplace_back(6419.5, 6570, Side::BUY, true);
+    rows.emplace_back(1001, 6421.5, 18640, Side::SELL, true);
+    rows.emplace_back(1002, 6422, 1190, Side::SELL, true);
+    rows.emplace_back(1003, 6422.5, 1080, Side::SELL, true);
+    rows.emplace_back(1004, 6423, 1400, Side::SELL, true);
+    rows.emplace_back(1005, 6421, 141360, Side::BUY, true);
+    rows.emplace_back(1006, 6420.5, 18830, Side::BUY, true);
+    rows.emplace_back(1007, 6420, 34410, Side::BUY, true);
+    rows.emplace_back(1008, 6419.5, 6570, Side::BUY, true);
 
     /* 增加 PriceLevel */
-    rows.emplace_back(6423.5, 6630, Side::SELL, false);
-    rows.emplace_back(6419, 8080, Side::BUY, false);
+    rows.emplace_back(1009, 6423.5, 6630, Side::SELL, false);
+    rows.emplace_back(1010, 6419, 8080, Side::BUY, false);
 
     /* 修改 volume，但不歸零 */
-    rows.emplace_back(6423, 100, Side::SELL, false);
-    rows.emplace_back(6419.5, 100, Side::BUY, false);
+    rows.emplace_back(1011, 6423, 100, Side::SELL, false);
+    rows.emplace_back(1012, 6419.5, 100, Side::BUY, false);
 
     /* 修改 volueme, 但修改後的 volume 歸零 */
-    rows.emplace_back(6421.5, 0, Side::SELL, false);
-    rows.emplace_back(6421, 0, Side::BUY, false);
+    rows.emplace_back(1013, 6421.5, 0, Side::SELL, false);
+    rows.emplace_back(1014, 6421, 0, Side::BUY, false);
 
     std::vector<PriceLevelInfo> sell_ans;
     sell_ans.push_back({6422, 1190});
@@ -123,22 +123,22 @@ void test_apply_snapshot() {
     std::vector<Rows_data> rows;
 
     /* 預設 L2_LOB 的 Rows_data */
-    rows.emplace_back(6421.5, 18640, Side::SELL, true);
-    rows.emplace_back(6422, 1190, Side::SELL, true);
-    rows.emplace_back(6422.5, 1080, Side::SELL, true);
-    rows.emplace_back(6423, 1400, Side::SELL, true);
-    rows.emplace_back(6421, 141360, Side::BUY, true);
-    rows.emplace_back(6420.5, 18830, Side::BUY, true);
-    rows.emplace_back(6420, 34410, Side::BUY, true);
-    rows.emplace_back(6419.5, 6570, Side::BUY, true);
+    rows.emplace_back(1001, 6421.5, 18640, Side::SELL, true);
+    rows.emplace_back(1002, 6422, 1190, Side::SELL, true);
+    rows.emplace_back(1003, 6422.5, 1080, Side::SELL, true);
+    rows.emplace_back(1004, 6423, 1400, Side::SELL, true);
+    rows.emplace_back(1005, 6421, 141360, Side::BUY, true);
+    rows.emplace_back(1006, 6420.5, 18830, Side::BUY, true);
+    rows.emplace_back(1007, 6420, 34410, Side::BUY, true);
+    rows.emplace_back(1008, 6419.5, 6570, Side::BUY, true);
 
     /* 增加 PriceLevel */
-    rows.emplace_back(6423.5, 6630, Side::SELL, false);
-    rows.emplace_back(6419, 8080, Side::BUY, false);
+    rows.emplace_back(1009, 6423.5, 6630, Side::SELL, false);
+    rows.emplace_back(1010, 6419, 8080, Side::BUY, false);
 
     /* 重新出現 is_sanpshot */
-    rows.emplace_back(100, 100, Side::SELL, true);
-    rows.emplace_back(100, 100, Side::BUY, true);
+    rows.emplace_back(1011, 100, 100, Side::SELL, true);
+    rows.emplace_back(1012, 100, 100, Side::BUY, true);
 
     book.apply_snapshot(rows);
 

@@ -1,6 +1,7 @@
 #ifndef __LOB_L2_TYPE_HPP__
 #define __LOB_L2_TYPE_HPP__
 
+#include <functional>
 #include <vector>
 
 #include "LOB_common.hpp"
@@ -65,19 +66,21 @@ class Greater_L2_PriceLevel {
  * Rows_data: load_snapshot_rows 解析完 csv 後，每一個 Raw 的資訊              *
  *****************************************************************************/
 struct Rows_data {
+  uint64_t timestamp;
   double price;
   uint64_t volume;
   Side side;
   bool is_snapshot;
 
-  Rows_data(double p, uint64_t vol, Side sd, bool is_ss)
-      : price(p), volume(vol), side(sd), is_snapshot(is_ss) {}
+  Rows_data(uint64_t ts, double p, uint64_t vol, Side sd, bool is_ss)
+      : timestamp(ts), price(p), volume(vol), side(sd), is_snapshot(is_ss) {}
 
   friend bool operator==(const Rows_data& a, const Rows_data& b);
 };
 
 inline bool operator==(const Rows_data& a, const Rows_data& b) {
-  return a.price == b.price && a.volume == b.volume && a.side == b.side &&
+  return a.timestamp == b.timestamp && a.price == b.price &&
+         a.volume == b.volume && a.side == b.side &&
          a.is_snapshot == b.is_snapshot;
 }
 
@@ -88,10 +91,14 @@ class L2_LOB {
  private:
   RedBlackTree<L2_PriceLevel, Less_L2_PriceLevel> seller_tree;
   RedBlackTree<L2_PriceLevel, Greater_L2_PriceLevel> buyer_tree;
+  void apply_single_row(const Rows_data& row);
 
  public:
   void apply_snapshot(const std::vector<Rows_data>& rows); /* 重建 LOB */
-  void load_CSV_snapshot(const std::string& path);         /* 解析 CSV */
+  /* 解析 CSV 並批次處理進 LOB */
+  void load_CSV_snapshot(const std::string& path,
+                         std::function<void(const L2_LOB&, const Rows_data&)>
+                             on_batch_applied = nullptr);
 
   /* 查詢 */
   double get_best_bid_price() const;    /* 取得最佳賣價       */
