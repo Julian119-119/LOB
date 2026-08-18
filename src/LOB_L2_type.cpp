@@ -103,7 +103,8 @@ std::vector<PriceLevelInfo> L2_LOB::get_top_k_info(size_t k, Side side) {
  *****************************************************************************/
 void L2_LOB::load_CSV_snapshot(
     const std::string& path,
-    std::function<void(const L2_LOB&, const Rows_data&)> on_batch_applied) {
+    std::function<void(const L2_LOB&, const Rows_data&)> on_batch_applied,
+    std::optional<uint64_t> stop_at_timestamp) {
   std::vector<Rows_data> rows;
   rows.reserve(512);
   std::fstream fin;
@@ -143,7 +144,6 @@ void L2_LOB::load_CSV_snapshot(
       /* 解析字串 */
       std::stringstream ss(line);
       std::string field;
-
       getline(ss, field, ','); /* 讀取 timestamp */
       row_timestamp = std::stoull(field);
       getline(ss, field, ','); /* 讀取 side */
@@ -154,15 +154,15 @@ void L2_LOB::load_CSV_snapshot(
       row_total_volume = std::stoull(field);
       getline(ss, field, ','); /* 讀取 is_snapshot */
       row_is_snapshot = field == "true" ? true : false;
+
     } else /* 有暫存值，則直接用 */ {
       Rows_data row_data = pending.value();
-      pending.reset();
-
       row_timestamp = row_data.timestamp;
       row_side = row_data.side;
       row_price = row_data.price;
       row_total_volume = row_data.volume;
       row_is_snapshot = row_data.is_snapshot;
+      pending.reset();
     }
 
     /* 從重建 L2_LOB 到 delta */
@@ -178,11 +178,16 @@ void L2_LOB::load_CSV_snapshot(
       continue;
     }
 
+    /* 判斷是否要提前終止 */
+    if (stop_at_timestamp.has_value() && stop_at_timestamp < row_timestamp) {
+      return;
+    }
+
     /* 從 delta 到重建 L2_LOB */
     if (!current_batch_is_snapshot && row_is_snapshot)
       current_batch_is_snapshot = true;
 
-    /* 如果是重建的 Row_data 就放入 vector，否則直接應用在 L2_LOB 上*/
+    /* 如果是重建的 Row_data 就放入 vector，否則直接應用在 L2_LOB 上 */
     if (row_is_snapshot) {
       rows.emplace_back(row_timestamp, row_price, row_total_volume, row_side,
                         row_is_snapshot);

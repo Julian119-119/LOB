@@ -7,7 +7,7 @@
 void test_load_CSV_snapshot() {
   {
     L2_LOB book;
-    std::string path = "test/fixtures/l2_load_csv_snapshot_test.csv";
+    std::string path = "test/fixtures/l2_load_csv_snapshot_test_readall.csv";
     book.load_CSV_snapshot(path);
 
     std::vector<PriceLevelInfo> sell_ans;
@@ -33,6 +33,84 @@ void test_load_CSV_snapshot() {
     assert(sell_ans == sell_pli);
   }
 
+  /* 測試停止在 delta 上 */
+  {
+    L2_LOB book;
+    std::string path = "test/fixtures/l2_load_csv_snapshot_test_readall.csv";
+    book.load_CSV_snapshot(path, nullptr, 1585699200314000);
+
+    std::vector<PriceLevelInfo> sell_ans;
+    sell_ans.push_back({6421.5, 18640});
+    sell_ans.push_back({6422.0, 1190});
+    sell_ans.push_back({6422.5, 1080});
+    sell_ans.push_back({6423.0, 1510});
+    sell_ans.push_back({6423.5, 6510});
+
+    std::vector<PriceLevelInfo> buy_ans;
+    buy_ans.push_back({6421.0, 141360});
+    buy_ans.push_back({6420.5, 18830});
+    buy_ans.push_back({6420.0, 34410});
+    buy_ans.push_back({6419.5, 6570});
+    buy_ans.push_back({6419.0, 8080});
+
+    std::vector<PriceLevelInfo> buy_pli = book.get_top_k_info(6, Side::BUY);
+    std::vector<PriceLevelInfo> sell_pli = book.get_top_k_info(6, Side::SELL);
+
+    assert(buy_ans == buy_pli);
+    assert(sell_ans == sell_pli);
+  }
+
+  {
+    L2_LOB book;
+    std::string path =
+        "test/fixtures/l2_load_csv_snapshot_test_end_in_snapshot.csv";
+    book.load_CSV_snapshot(path, nullptr, 1585774937090000);
+
+    std::vector<PriceLevelInfo> sell_ans;
+    sell_ans.push_back({14351.5, 20});
+    sell_ans.push_back({15000.0, 110});
+    sell_ans.push_back({20000.0, 100});
+
+    std::vector<PriceLevelInfo> buy_ans;
+    buy_ans.push_back({100.0, 100050});
+    buy_ans.push_back({10.0, 102000});
+    buy_ans.push_back({1.0, 4500});
+
+    std::vector<PriceLevelInfo> buy_pli = book.get_top_k_info(4, Side::BUY);
+    std::vector<PriceLevelInfo> sell_pli = book.get_top_k_info(4, Side::SELL);
+
+    assert(buy_ans == buy_pli);
+    assert(sell_ans == sell_pli);
+  }
+
+  /* 測試停止時的 is_snapshot 還沒結束 */
+  {
+    L2_LOB book;
+    std::string path = "test/fixtures/l2_load_csv_snapshot_test_mid_end.csv";
+    book.load_CSV_snapshot(path, nullptr, 1585774937090000);
+
+    std::vector<PriceLevelInfo> sell_ans;
+    sell_ans.push_back({6421.5, 18640});
+    sell_ans.push_back({6422.0, 1190});
+    sell_ans.push_back({6422.5, 1080});
+    sell_ans.push_back({6423.0, 1510});
+    sell_ans.push_back({6423.5, 6510});
+    sell_ans.push_back({6431.0, 12790});
+
+    std::vector<PriceLevelInfo> buy_ans;
+    buy_ans.push_back({6421.0, 141360});
+    buy_ans.push_back({6420.5, 18830});
+    buy_ans.push_back({6420.0, 34410});
+    buy_ans.push_back({6419.5, 6570});
+    buy_ans.push_back({6419.0, 8080});
+    buy_ans.push_back({6414.5, 19280});
+
+    std::vector<PriceLevelInfo> buy_pli = book.get_top_k_info(7, Side::BUY);
+    std::vector<PriceLevelInfo> sell_pli = book.get_top_k_info(7, Side::SELL);
+
+    assert(buy_ans == buy_pli);
+    assert(sell_ans == sell_pli);
+  }
   std::cout << "test_load_CSV_snapshot passed!\n" << std::flush;
 }
 

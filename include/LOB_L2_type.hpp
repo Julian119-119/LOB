@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <vector>
+#include <optional>
 
 #include "LOB_common.hpp"
 #include "RedBlackTree.hpp"
@@ -96,9 +97,11 @@ class L2_LOB {
  public:
   void apply_snapshot(const std::vector<Rows_data>& rows); /* 重建 LOB */
   /* 解析 CSV 並批次處理進 LOB */
-  void load_CSV_snapshot(const std::string& path,
-                         std::function<void(const L2_LOB&, const Rows_data&)>
-                             on_batch_applied = nullptr);
+  void load_CSV_snapshot(
+      const std::string& path,
+      std::function<void(const L2_LOB&, const Rows_data&)> on_batch_applied =
+          nullptr,
+      std::optional<uint64_t> stop_at_timestamp = std::nullopt);
 
   /* 查詢 */
   double get_best_bid_price() const;    /* 取得最佳賣價       */
