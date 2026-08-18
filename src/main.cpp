@@ -22,7 +22,7 @@ int main() {
       [&fout, &is_first](const L2_LOB& this_book, const Rows_data& curr_row) {
         if (is_first) {
           is_first = false;
-          fout << "timestamp,spread\n";
+          fout << "timestamp,mid-price\n";
         }
         fout << curr_row.timestamp << ',' << this_book.get_mid_price() << '\n';
       };
