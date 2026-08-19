@@ -111,7 +111,7 @@ class L2_LOB {
   double get_mid_price() const;         /* 取得買賣方中間價格 */
   double get_spread() const;            /* 取得買賣價差       */
   uint64_t get_volume_at_price(double tar_price, Side side) const;
-  std::vector<PriceLevelInfo> get_top_k_info(size_t k, Side side);
+  const std::vector<PriceLevelInfo> get_top_k_info(size_t k, Side side) const;
 };
 
 #endif

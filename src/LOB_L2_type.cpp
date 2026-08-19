@@ -77,7 +77,7 @@ uint64_t L2_LOB::get_volume_at_price(double tar_price, Side tar_side) const {
   }
 }
 
-std::vector<PriceLevelInfo> L2_LOB::get_top_k_info(size_t k, Side side) {
+const std::vector<PriceLevelInfo> L2_LOB::get_top_k_info(size_t k, Side side) const {
   std::vector<PriceLevelInfo> info;
   info.reserve(k);
 

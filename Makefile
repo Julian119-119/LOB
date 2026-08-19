@@ -35,15 +35,20 @@ $(OBJ_DIR)/LOB_L3_type.o: $(SRC_DIR)/LOB_L3_type.cpp | $(OBJ_DIR)
 $(OBJ_DIR)/LOB_L2_type.o: $(SRC_DIR)/LOB_L2_type.cpp | $(OBJ_DIR)
 	$(CXX) $(CPP_FLAGS) -c $< -o $@
 
+$(OBJ_DIR)/main.o: $(SRC_DIR)/main.cpp | $(OBJ_DIR)
+	$(CXX) $(CPP_FLAGS) -c $< -o $@
+
 $(OBJ_DIR)/benchmark.o: $(BENCHMARK_DIR)/benchmark.cpp | $(OBJ_DIR)
 	$(CXX) $(CPP_FLAGS) -c $< -o $@
 
-all: mkdir test_program benchmark_program
+all: mkdir test_program benchmark_program main_program
 
 
 test_program: $(TEST_OBJ) $(OBJ_DIR)/LOB_L3_type.o $(OBJ_DIR)/LOB_L2_type.o | $(OUT_DIR)
 	$(CXX) $(CPP_FLAGS) $^ -o $(OUT_DIR)/$@
 benchmark_program: $(OBJ_DIR)/benchmark.o $(OBJ_DIR)/LOB_L3_type.o | $(OUT_DIR)
+	$(CXX) $(CPP_FLAGS) $^ -o $(OUT_DIR)/$@
+main_program: $(OBJ_DIR)/main.o $(OBJ_DIR)/LOB_L2_type.o | $(OUT_DIR)
 	$(CXX) $(CPP_FLAGS) $^ -o $(OUT_DIR)/$@
 .PHONY: test clean mkdir run_benchmark all
 
