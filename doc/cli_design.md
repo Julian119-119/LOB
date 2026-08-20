@@ -54,6 +54,8 @@ streaming 模式每一列都對應「這筆資料被套用後當下的狀態」�
 | `bid-top-k`           | 不適用                           | `side,price,volume` |
 | `ask-top-k`           | 不適用                           | `side,price,volume` |
 
+**新增 query 時的規定：streaming 輸出的最後一欄，必須是查詢中要觀測的數值**（其餘欄位可以是 `timestamp`，或是像 `volume-at-bid-price` 的 `side`/`price` 那種在單次查詢裡固定不變的識別欄）。當前的 `script/make_chart.py` 依賴這個順序，如果不遵守則會報錯。
+
 ## 暫不處理（先求簡單能動）
 
 - `--query` 目前設計成**一次只能選一個**，輸出的 CSV 只對應單一查詢結果。之後如果需要一次輸出多個查詢（例如 `best-bid`、`best-ask`、`spread` 同時要），可以擴充成逗號分隔的清單（`--query best-bid,best-ask,spread`），但這會讓輸出欄位變成動態組裝，複雜度高不少——等單一 query 版本穩定、其他部分都設計得差不多後再評估。
