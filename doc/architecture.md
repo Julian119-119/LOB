@@ -1,6 +1,8 @@
 
 # 系統架構
 
+> 此為**設計筆記**用以記錄系統內部結構，不是使用手冊。要查怎麼下指令，請參見 `doc/main_program_usage.md` / `doc/chart_cli_design.md`。
+
 ## 設計理念
 
 此 side project 以時間與價格為優先度來排序。

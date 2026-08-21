@@ -1,5 +1,7 @@
 # L2 實盤資料大方向規劃
 
+> 此為**歷史規劃紀錄**。 「建議的實作順序」1–4 已經完成（`main_program`、`script/convert_l2.py`、真實 Deribit 資料都已在用），只剩第 5 步（即時串流）還沒做。這裡記錄的是規劃當下的推理過程，不是使用手冊。
+
 ## 背景
 
 LOB 目前的撮合引擎是 **L3（order-level）** 模型：每一筆委託都是獨立的 `Order`（有 `order_id`），同一 price level 內用 FIFO `order_queue` 排隊，撮合邏輯（`order_matching`）會實際消耗、拆分訂單。

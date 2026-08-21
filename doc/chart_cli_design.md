@@ -1,5 +1,6 @@
 # make_chart.py 使用說明
 
+
 `script/make_chart.py` 讀取 `main_program` 產生的 CSV，自動判斷該畫成圖還是印成 table，不需要額外告訴它輸入是哪種模式。
 
 ## 用法
@@ -63,8 +64,10 @@ python3 script/make_chart.py --input /tmp/vol.csv --chart-type line
 
 ## 目前還不支援
 
-`best-bid`/`best-ask` 的 streaming 輸出（同時有 price 跟 volume 兩個會變動的欄位）目前餵進去**不會報錯，但也什麼都不會輸出**——這個情況的呈現方式還沒定案，先不要拿這種檔案當輸入。
+1. 多個 input。當前只能輸入一個 input，無法做出多個 input 的多圖比較
+2. best-ask 與 best-bid 的 streaming mode，目前還無法指定 price 與 volume 使用不同的圖表種類
+
 
 ## 設計細節
 
-自動判斷輸入格式的邏輯（batch/streaming 怎麼分、要畫哪一欄）、以及對 `main_program` 輸出欄位順序的依賴，記錄在程式碼註解與 `doc/cli_design.md`（「新增 query 時的契約」段落）——不在這裡重複，這份文件只講怎麼用。
+自動判斷輸入格式的邏輯（batch/streaming 怎麼分、要畫哪一欄）、以及對 `main_program` 輸出欄位順序的依賴，記錄在程式碼註解與 `doc/cli_design.md` 中。
