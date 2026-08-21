@@ -82,7 +82,6 @@ def main():
                         file=sys.stderr,
                     )
                     sys.exit(1)
-
             else:  # 在 input_data 中指定了要用某一個變數的狀況
                 if args.field == "price":
                     if "best-bid" in input_data.columns:
@@ -91,7 +90,6 @@ def main():
                         value_col = "best-ask"
                 else:
                     value_col = "volume"
-
             # 將 timestamp 從微秒的 uin64_t 轉為一般的時間表示法
             input_data["timestamp"] = pd.to_datetime(input_data["timestamp"], unit="us")
             # 將 timestamp  resamp 為每秒中的最後數值
@@ -120,6 +118,63 @@ def main():
                     plt.xlabel(value_col)
                     plt.ylabel("count")
                 plt.title(plot_title)
+
+                # 輸出圖表
+                if args.output is None:
+                    plt.show()
+                else:
+                    plt.savefig(args.output)
+        else:  # 要求使用多個變數的狀況
+            if "best-ask" in input_data.columns:
+                price_col = "best-ask"
+            else:
+                price_col = "best-bid"
+
+            # 轉換 timestamp 為一般的時間表示法
+            input_data["timestamp"] = pd.to_datetime(input_data["timestamp"], unit="us")
+            plot_data = input_data.set_index("timestamp").resample("1s").last()
+
+            # 設定圖表
+            plt.rcParams["font.size"] = 14
+            with plt.style.context(matplotx.styles.pitaya_smoothie["light"]):
+                # 設定 subplot 為上下或左右擺放
+                if args.chart_type != "histogram":
+                    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(19, 10))
+                else:
+                    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(19, 10))
+
+                # 設定 subplot 的標題
+                ax1_title = price_col
+                ax2_title = "volume"
+                if args.chart_type == "line":
+                    ax1.plot(plot_data.index, plot_data[price_col])
+                    ax2.plot(plot_data.index, plot_data["volume"])
+                    ax1.set_xlabel("time")
+                    ax2.set_xlabel("time")
+                    ax2.set_ylabel("volume")
+                    ax1.set_ylabel(price_col)
+                    ax1_title += " trend chart"
+                    ax2_title += " trend chart"
+                elif args.chart_type == "step":
+                    ax1.step(plot_data.index, plot_data[price_col])
+                    ax2.step(plot_data.index, plot_data["volume"])
+                    ax1.set_xlabel("time")
+                    ax2.set_xlabel("time")
+                    ax1.set_ylabel(price_col)
+                    ax2.set_ylabel("volume")
+                    ax1_title += " step chart"
+                    ax2_title += " step chart"
+                else:
+                    ax1.hist(plot_data[price_col], bins="auto")
+                    ax1.set_xlabel(price_col)
+                    ax1.set_ylabel("count")
+                    ax2.set_xlabel("volume")
+                    ax2.set_ylabel("count")
+                    ax2.hist(plot_data["volume"], bins="auto")
+                    ax1_title += " histogram"
+                    ax2_title += " histogram"
+                ax1.set_title(ax1_title)
+                ax2.set_title(ax2_title)
 
                 # 輸出圖表
                 if args.output is None:
